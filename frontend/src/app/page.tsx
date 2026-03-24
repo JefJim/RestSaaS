@@ -20,25 +20,30 @@ export default async function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background flex flex-col items-center selection:bg-primary/30">
-      
+
       {/* Background Animated Blobs */}
       <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob dark:opacity-20"></div>
       <div className="absolute top-0 -right-4 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-2000 dark:opacity-20"></div>
       <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-4000 dark:opacity-20"></div>
 
       {/* Navigation */}
-      <nav className="w-full max-w-7xl mx-auto px-6 py-8 flex justify-between items-center z-10 glass-dark rounded-b-2xl mb-12 sticky top-0 md:relative md:glass-none sm:bg-transparent md:border-none">
+      <nav className="w-full px-12 py-6 flex justify-between items-center z-50 glass sticky top-0 border-b border-foreground/5 shadow-2xl transition-all duration-500">
         <div className="flex items-center gap-5">
-          <div className="w-[90px] h-[90px] relative">
-             <Image src="/logo.png" alt="TableHive Logo" fill className="object-contain" />
+          <div className="w-16 h-16 relative overflow-hidden">
+            <Image
+              src="/logo.png"
+              alt="TableHive Logo"
+              fill
+              className="object-cover scale-[1.7] hover:scale-[1.9] transition-transform duration-700"
+            />
           </div>
-          <span className="text-3xl font-extrabold tracking-tight">TableHive</span>
+          <span className="text-3xl font-black tracking-tighter text-foreground selection:text-white">TableHive</span>
         </div>
-        <div className="flex gap-4">
-          <Link href="/admin" className="px-5 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors">
+        <div className="flex gap-4 items-center">
+          <Link href="/admin" className="px-6 py-2.5 text-sm font-bold text-foreground/70 hover:text-primary transition-all uppercase tracking-widest">
             Iniciar Sesión
           </Link>
-          <Link href="/signup" className="px-5 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5">
+          <Link href="/signup" className="px-8 py-3 text-sm font-black text-white bg-primary hover:bg-primary-dark rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
             Empezar Gratis
           </Link>
         </div>
@@ -50,12 +55,12 @@ export default async function Home() {
           <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
           Respaldo a {displayCount} restaurantes
         </div>
-        
+
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight max-w-4xl">
-          La mejor plataforma para <br className="hidden md:block"/>
+          La mejor plataforma para <br className="hidden md:block" />
           <span className="text-gradient">restaurantes modernos</span>
         </h1>
-        
+
         <p className="text-lg md:text-xl text-foreground/70 mb-12 max-w-2xl leading-relaxed">
           Lanza tu página web, menú digital y sistema de reservaciones en minutos. Arquitectura potente diseñada para escalar.
         </p>
@@ -79,16 +84,16 @@ export default async function Home() {
               <div className="w-3 h-3 rounded-full bg-green-400"></div>
             </div>
             <div className="flex-1 rounded-xl bg-background/50 border border-border overflow-hidden p-8 flex items-center justify-center relative">
-               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
-               <div className="text-center">
-                 <h3 className="text-2xl font-bold mb-2">Menús Hermosos</h3>
-                 <p className="text-foreground/60 w-64 mx-auto">A tus clientes les encantará explorar tus platillos digitales.</p>
-               </div>
+              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold mb-2">Menús Hermosos</h3>
+                <p className="text-foreground/60 w-64 mx-auto">A tus clientes les encantará explorar tus platillos digitales.</p>
+              </div>
             </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

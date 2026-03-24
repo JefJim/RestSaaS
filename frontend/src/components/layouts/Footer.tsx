@@ -6,8 +6,15 @@ export const Footer = () => {
     <footer className="w-full bg-surface dark:bg-surface-dark border-t border-border mt-auto relative z-20">
       <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-5">
-          <Image src="/logo.png" alt="TableHive Logo" width={90} height={90} className="drop-shadow-md" />
-          <span className="text-3xl font-extrabold tracking-tight text-foreground">TableHive</span>
+          <div className="w-16 h-16 relative overflow-hidden">
+             <Image 
+                src="/logo.png" 
+                alt="TableHive Logo" 
+                fill 
+                className="object-cover scale-[1.7]" 
+             />
+          </div>
+          <span className="text-3xl font-black tracking-tighter text-foreground">TableHive</span>
         </div>
 
         <div className="flex flex-wrap justify-center gap-6 text-sm font-medium text-foreground/70">
