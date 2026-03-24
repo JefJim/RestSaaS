@@ -66,18 +66,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {shouldShowSidebar && (
         <aside className="w-72 bg-surface/80 backdrop-blur-xl border-r border-border flex flex-col z-50 animate-in fade-in slide-in-from-left-4 duration-500">
           <div className="p-8 flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
-              <Image
-                src="/logo.png"
-                alt="Logo"
-                width={32}
-                height={32}
-                unoptimized
-                priority
-                style={{ height: 'auto' }}
-                className="brightness-0 invert"
-              />
-            </div>
+            <div className="w-16 h-16 flex items-center justify-center relative overflow-hidden">
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={64} 
+              height={64} 
+              unoptimized
+              priority
+              style={{ width: '100%', height: 'auto' }}
+              className="brightness-0 invert drop-shadow-[0_0_12px_rgba(124,58,237,0.6)] scale-[2.2] transition-transform" 
+            />
+          </div>
             <div>
               <h2 className="text-xl font-black tracking-tighter text-foreground">TableHive</h2>
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">Admin Portal</p>

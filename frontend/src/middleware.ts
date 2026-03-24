@@ -16,46 +16,39 @@ export const config = {
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
-  const hostname = req.headers.get('host') || 'myplatform.localhost';
+  const hostname = req.headers.get('host') || '';
 
-  // Define platform domains
-  const platformDomains = ['myplatform.localhost', 'myplatform.com', 'www.myplatform.com'];
+  // Get root domain from environment (e.g., "localhost:3000" or "tablehive.com")
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000';
 
-  // Check if this is a platform domain
-  const isPlatformDomain = platformDomains.some(domain => hostname.includes(domain));
+  // 1. Skip if it's the base platform domain without a subdomain
+  if (hostname === rootDomain || hostname === `www.${rootDomain.split(':')[0]}`) {
+     return NextResponse.next();
+  }
 
-  if (!isPlatformDomain) {
-    // Not a platform domain, let it pass through
+  // 2. Extract subdomain/tenant slug
+  // hostname = "pizzaluna.localhost:3000"
+  // rootDomain = "localhost:3000"
+  const currentHost = hostname.replace(`.${rootDomain}`, '');
+
+  // 3. If there was no subdomain (currentHost === hostname), it's not a tenant URL
+  if (currentHost === hostname) {
     return NextResponse.next();
   }
 
-  // Extract the tenant slug from the hostname
-  let currentHost = hostname.split(':')[0]; // Remove port
-
-  // Remove platform domain parts
-  currentHost = currentHost
-    .replace('.myplatform.localhost', '')
-    .replace('.myplatform.com', '')
-    .replace('www.', '');
-
-  // If currentHost is empty or is the base domain, it's not a tenant
-  if (!currentHost || platformDomains.some(domain => currentHost === domain.split('.')[0])) {
-    return NextResponse.next();
-  }
-
-  // Validate tenant slug format (alphanumeric, hyphens, underscores)
+  // 4. Validate tenant slug format (alphanumeric, hyphens)
   const slugRegex = /^[a-zA-Z0-9_-]+$/;
   if (!slugRegex.test(currentHost)) {
-    // Invalid slug format, redirect to 404 or home
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.next(); 
   }
 
-  // For admin and platform routes, don't rewrite
+  // 5. Exclude admin and platform routes from being rewritten (keep them global)
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/platform')) {
     return NextResponse.next();
   }
 
-  // Rewrite to tenant route
+  // 6. Rewrite request to the [tenantSlug] dynamic route
+  // e.g., /menu -> /pizzaluna/menu
   const tenantPath = `/${currentHost}${url.pathname}`;
   return NextResponse.rewrite(new URL(tenantPath, req.url));
 }
