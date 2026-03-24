@@ -25,6 +25,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<OpeningHours> OpeningHours { get; set; } = null!;
     public DbSet<Plan> Plans { get; set; } = null!;
     public DbSet<Subscription> Subscriptions { get; set; } = null!;
+    public DbSet<Order> Orders { get; set; } = null!;
+    public DbSet<OrderItem> OrderItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +43,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Settings>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
         modelBuilder.Entity<OpeningHours>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
         modelBuilder.Entity<Subscription>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
+        modelBuilder.Entity<Order>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
+        modelBuilder.Entity<OrderItem>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
     }
     
     public override int SaveChanges()
