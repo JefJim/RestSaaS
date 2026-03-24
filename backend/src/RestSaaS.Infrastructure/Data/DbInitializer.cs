@@ -10,79 +10,37 @@ public static class DbInitializer
         // Apply migrations
         // context.Database.Migrate();
 
-        // Check if restaurants already exist
-        if (context.Restaurants.Any())
+        // Seed Restaurants
+        if (!context.Restaurants.Any())
         {
-            return;   // DB has been seeded
+            var restaurants = new Restaurant[]
+            {
+                new Restaurant { Name = "Pizza Luna", Slug = "pizzaluna", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new Restaurant { Name = "Sushi Time", Slug = "sushitime", IsActive = true, CreatedAt = DateTime.UtcNow }
+            };
+
+            context.Restaurants.AddRange(restaurants);
+            context.SaveChanges();
+
+            // Add some initial menu for the first restaurant
+            var pizzaLuna = restaurants[0];
+            var menu = new Menu { RestaurantId = pizzaLuna.Id, Name = "Main Menu", IsActive = true };
+            context.Menus.Add(menu);
+            context.SaveChanges();
+
+            var category = new MenuCategory { RestaurantId = pizzaLuna.Id, MenuId = menu.Id, Name = "Pizzas", DisplayOrder = 1 };
+            context.MenuCategories.Add(category);
+            context.SaveChanges();
+
+            var items = new MenuItem[]
+            {
+                new MenuItem { RestaurantId = pizzaLuna.Id, CategoryId = category.Id, Name = "Margherita", Description = "Fresh mozzarella, basil and tomato sauce", Price = 12.99m, IsAvailable = true },
+                new MenuItem { RestaurantId = pizzaLuna.Id, CategoryId = category.Id, Name = "Pepperoni", Description = "Classic pepperoni with mozzarella", Price = 14.99m, IsAvailable = true }
+            };
+
+            context.MenuItems.AddRange(items);
+            context.SaveChanges();
         }
-
-        var restaurants = new Restaurant[]
-        {
-            new Restaurant
-            {
-                Name = "Pizza Luna",
-                Slug = "pizzaluna",
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            },
-            new Restaurant
-            {
-                Name = "Sushi Time",
-                Slug = "sushitime",
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            }
-        };
-
-        context.Restaurants.AddRange(restaurants);
-        context.SaveChanges();
-
-        // Add some menu items for Pizza Luna
-        var pizzaLuna = restaurants[0];
-        
-        var menu = new Menu
-        {
-            RestaurantId = pizzaLuna.Id,
-            Name = "Main Menu",
-            IsActive = true
-        };
-        context.Menus.Add(menu);
-        context.SaveChanges();
-
-        var category = new MenuCategory
-        {
-            RestaurantId = pizzaLuna.Id,
-            MenuId = menu.Id,
-            Name = "Pizzas",
-            DisplayOrder = 1
-        };
-        context.MenuCategories.Add(category);
-        context.SaveChanges();
-
-        var items = new MenuItem[]
-        {
-            new MenuItem
-            {
-                RestaurantId = pizzaLuna.Id,
-                CategoryId = category.Id,
-                Name = "Margherita",
-                Description = "Fresh mozzarella, basil and tomato sauce",
-                Price = 12.99m,
-                IsAvailable = true
-            },
-            new MenuItem
-            {
-                RestaurantId = pizzaLuna.Id,
-                CategoryId = category.Id,
-                Name = "Pepperoni",
-                Description = "Classic pepperoni with mozzarella",
-                Price = 14.99m,
-                IsAvailable = true
-            }
-        };
-
-        context.MenuItems.AddRange(items);
-        context.SaveChanges();
 
         // Seed Plans
         if (!context.Plans.Any())
@@ -96,20 +54,23 @@ public static class DbInitializer
             context.Plans.AddRange(plans);
             context.SaveChanges();
 
-            // Link Pizza Luna to Pro Plan
-            if (!context.Subscriptions.Where(s => s.RestaurantId == pizzaLuna.Id).Any())
+            // Link existing restaurants to Pro Plan if they have no subscription
+            var restaurants = context.Restaurants.ToList();
+            foreach (var restaurant in restaurants)
             {
-                var proPlan = plans[1];
-                context.Subscriptions.Add(new Subscription
+                if (!context.Subscriptions.Any(s => s.RestaurantId == restaurant.Id))
                 {
-                    RestaurantId = pizzaLuna.Id,
-                    PlanId = proPlan.Id,
-                    StartDate = DateTime.UtcNow,
-                    IsActive = true,
-                    Status = "Active"
-                });
-                context.SaveChanges();
+                    context.Subscriptions.Add(new Subscription
+                    {
+                        RestaurantId = restaurant.Id,
+                        PlanId = plans[1].Id,
+                        StartDate = DateTime.UtcNow,
+                        IsActive = true,
+                        Status = "Active"
+                    });
+                }
             }
+            context.SaveChanges();
         }
     }
 }

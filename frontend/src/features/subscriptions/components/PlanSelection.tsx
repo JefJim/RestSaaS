@@ -20,10 +20,11 @@ export const PlanSelection = () => {
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("restsaas_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
       try {
         const [plansRes, subRes] = await Promise.all([
-          fetch("http://localhost:8080/api/plans"),
-          fetch("http://localhost:8080/api/subscriptions/me", {
+          fetch(`${apiUrl}/api/plans`),
+          fetch(`${apiUrl}/api/subscriptions/me`, {
             headers: { "Authorization": `Bearer ${token}` }
           })
         ]);
@@ -46,8 +47,9 @@ export const PlanSelection = () => {
 
   const handleSubscribe = async (planId: string) => {
     const token = localStorage.getItem("restsaas_token");
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
     try {
-      const res = await fetch(`http://localhost:8080/api/subscriptions/subscribe/${planId}`, {
+      const res = await fetch(`${apiUrl}/api/subscriptions/subscribe/${planId}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });

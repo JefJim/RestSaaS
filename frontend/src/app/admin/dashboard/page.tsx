@@ -21,7 +21,8 @@ export default function DashboardPage() {
     const fetchMyRestaurant = async () => {
       const token = localStorage.getItem("restsaas_token");
       try {
-        const res = await fetch("http://localhost:8080/api/restaurants/me", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const res = await fetch(`${apiUrl}/api/restaurants/me`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }

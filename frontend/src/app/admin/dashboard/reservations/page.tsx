@@ -26,7 +26,8 @@ export default function ReservationsPage() {
   const fetchReservations = async () => {
     try {
       const token = localStorage.getItem("restsaas_token");
-      const response = await fetch("http://localhost:8080/api/reservations", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+      const response = await fetch(`${apiUrl}/api/reservations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

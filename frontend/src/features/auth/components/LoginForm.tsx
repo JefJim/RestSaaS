@@ -15,8 +15,9 @@ export const LoginForm = () => {
     setLoading(true);
     setError("");
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
     try {
-      const res = await fetch("http://localhost:8080/api/auth/login", {
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })

@@ -50,16 +50,11 @@ async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
   }
 }
 
-async function getMenuData(slug: string): Promise<MenuData | null> {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenant/${slug}/menu`, {
-      cache: 'no-store'
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+async function getMenuData(slug: string) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+  const res = await fetch(`${apiUrl}/api/restaurants/slug/${slug}/menu`, { cache: 'no-store' });
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export default async function RestaurantMenuPage({

@@ -45,7 +45,8 @@ JWT_SECRET="SuperSecretKeyForDevelopmentAndTestingOnly!123"
 - [x] **Phase 3: Relationships**: Many-to-Many logic.
 - [x] **Phase 4: Basic Dashboard**: Sidebar + Protected Routes + Stats.
 - [x] **Phase 5: Menu Module**: Category & Item management backend + UI.
-- [ ] **Phase 6 (Next): Public Website Template**: Building the dynamic page customers see.
+- [x] **Phase 10: Subscriptions**: Integrated Plan/Subscription entities and pricing UI.
+- [ ] **Phase 11 (Next): Subdomains**: Wildcard DNS and Nginx optimization.
 
 ## 🚀 How to Run
 1. `cd infrastructure/docker`

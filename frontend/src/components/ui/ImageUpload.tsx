@@ -37,7 +37,8 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8080/api/upload/image', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+      const response = await fetch(`${apiUrl}/api/storage/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -21,9 +21,9 @@ interface RestaurantData {
 
 async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenant/${slug}`, {
-      cache: 'no-store' // For development, in production use ISR
-    });
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+    const res = await fetch(`${apiUrl}/api/restaurants/slug/${slug}`, { cache: 'no-store' });
+    // For development, in production use ISR
     if (!res.ok) return null;
     return res.json();
   } catch {

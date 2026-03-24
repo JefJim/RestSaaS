@@ -24,9 +24,8 @@ interface RestaurantData {
 
 async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenant/${slug}`, {
-      cache: 'no-store'
-    });
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+    const res = await fetch(`${apiUrl}/api/restaurants/slug/${slug}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -86,7 +85,8 @@ export default function RestaurantReservationsPage({
     const reservationTime = new Date(`${data.date}T${data.time}`);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenant/${tenantSlug}/reservations`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+      const res = await fetch(`${apiUrl}/api/restaurants/slug/${tenantSlug}/reservations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

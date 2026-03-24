@@ -19,8 +19,9 @@ export const SignupForm = () => {
     setError("");
     setLoading(true);
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
     try {
-      const res = await fetch("http://localhost:8080/api/auth/register", {
+      const res = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurantName, email, password })

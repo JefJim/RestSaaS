@@ -35,9 +35,10 @@ export const MenuManager = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       const token = localStorage.getItem("restsaas_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
       try {
         // 1. Get the first menu
-        const res = await fetch("http://localhost:8080/api/menus", {
+        const res = await fetch(`${apiUrl}/api/menus`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const menus = await res.json();
@@ -45,7 +46,7 @@ export const MenuManager = () => {
           const menuId = menus[0].id;
           setActiveMenuId(menuId);
           // 2. Get full menu details
-          const fullRes = await fetch(`http://localhost:8080/api/menus/${menuId}/full`, {
+          const fullRes = await fetch(`${apiUrl}/api/menus/${menuId}/full`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           const fullMenu = await fullRes.json();
@@ -75,7 +76,8 @@ export const MenuManager = () => {
 
     try {
       const token = localStorage.getItem("restsaas_token");
-      const response = await fetch(`http://localhost:8080/api/menus/${activeMenuId}/items/${editingItem.id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+      const response = await fetch(`${apiUrl}/api/menus/${activeMenuId}/items/${editingItem.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
