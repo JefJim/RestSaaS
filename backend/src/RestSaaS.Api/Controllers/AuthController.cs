@@ -8,6 +8,8 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using Google.Apis.Auth;
+using RestSaaS.Api.Dtos;
 
 namespace RestSaaS.Api.Controllers;
 
@@ -80,6 +82,67 @@ public class AuthController : ControllerBase
         var token = GenerateJwtToken(user, primaryRestaurantId);
 
         return Ok(new { Token = token });
+    }
+
+    [HttpPost("google")]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+    {
+        try
+        {
+            var settings = new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { _config["Google:ClientId"] }
+            };
+
+            var payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, settings);
+            
+            // 1. Find user by OAuth info
+            var user = await _context.Users
+                .Include(u => u.UserRestaurants)
+                .FirstOrDefaultAsync(u => u.OAuthProvider == "Google" && u.OAuthId == payload.Subject);
+
+            if (user == null)
+            {
+                // 2. Find by email if not found by OAuth
+                user = await _context.Users
+                    .Include(u => u.UserRestaurants)
+                    .FirstOrDefaultAsync(u => u.Email == payload.Email);
+
+                if (user == null)
+                {
+                    // 3. Create new user
+                    user = new User
+                    {
+                        Email = payload.Email,
+                        OAuthProvider = "Google",
+                        OAuthId = payload.Subject,
+                        Role = "User"
+                    };
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    // Update existing user with Google ID
+                    user.OAuthProvider = "Google";
+                    user.OAuthId = payload.Subject;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            var primaryRestaurantId = user.UserRestaurants.FirstOrDefault()?.RestaurantId;
+            var token = GenerateJwtToken(user, primaryRestaurantId);
+
+            return Ok(new { Token = token });
+        }
+        catch (InvalidJwtException)
+        {
+            return BadRequest(new { Message = "Token de Google inválido." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = "Error interno.", Detail = ex.Message });
+        }
     }
 
     private string GenerateJwtToken(User user, Guid? restaurantId)

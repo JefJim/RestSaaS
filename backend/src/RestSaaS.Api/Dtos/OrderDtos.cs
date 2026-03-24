@@ -13,6 +13,11 @@ public class CreateOrderItemDto
     public int Quantity { get; set; }
 }
 
+public class GoogleLoginDto
+{
+    public string IdToken { get; set; } = string.Empty;
+}
+
 public class OrderResponseDto
 {
     public Guid Id { get; set; }
