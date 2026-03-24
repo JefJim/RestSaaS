@@ -36,7 +36,7 @@ A multi-tenant SaaS platform for restaurants, enabling them to have dedicated we
 4. [x] **Admin dashboard basic**: Developed Next.js Sidebar layout and data-fetching Widgets.
 5. [x] **Menu module**: Built full CRUD for Categories and Items with dynamic frontend management.
 6. [x] **Public website template** (Next.js Wildcard routing) - COMPLETED: Dynamic public pages with real API data, menu display, and reservation forms.
-7. [ ] **Slug routing** (Dynamic tenant resolution)
+7. [x] **Slug routing** (Dynamic tenant resolution) - COMPLETED: Enhanced middleware for robust subdomain/slug routing with validation and production support.
 8. [ ] **Image upload** (Supabase Storage)
 9. [ ] **Reservations**
 10. [ ] **Subscriptions** (Plans & Billing)

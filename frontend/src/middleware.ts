@@ -16,25 +16,46 @@ export const config = {
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
-
-  // Get hostname (e.g., 'pizzaluna.myplatform.localhost:3000')
   const hostname = req.headers.get('host') || 'myplatform.localhost';
 
-  // Extract the tenant slug from the hostname
-  // For local: pizzaluna.myplatform.localhost -> pizzaluna
-  const currentHost = hostname.replace(`.myplatform.localhost`, '').replace(`.myplatform.com`, '').split(':')[0];
+  // Define platform domains
+  const platformDomains = ['myplatform.localhost', 'myplatform.com', 'www.myplatform.com'];
 
-  // If the request isn't for the root domain (myplatform) and isn't www
-  if (currentHost !== 'myplatform.localhost' && currentHost !== 'myplatform' && currentHost !== 'www' && currentHost !== 'localhost') {
-    // If the path is /admin or /platform, let it route normally to those folders
-    if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/platform')) {
-      return NextResponse.next();
-    }
+  // Check if this is a platform domain
+  const isPlatformDomain = platformDomains.some(domain => hostname.includes(domain));
 
-    // Rewrite to the dynamic [tenantSlug] directory
-    // e.g. pizzaluna.localhost/menu -> /[tenantSlug]/menu
-    return NextResponse.rewrite(new URL(`/${currentHost}${url.pathname}`, req.url));
+  if (!isPlatformDomain) {
+    // Not a platform domain, let it pass through
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // Extract the tenant slug from the hostname
+  let currentHost = hostname.split(':')[0]; // Remove port
+
+  // Remove platform domain parts
+  currentHost = currentHost
+    .replace('.myplatform.localhost', '')
+    .replace('.myplatform.com', '')
+    .replace('www.', '');
+
+  // If currentHost is empty or is the base domain, it's not a tenant
+  if (!currentHost || platformDomains.some(domain => currentHost === domain.split('.')[0])) {
+    return NextResponse.next();
+  }
+
+  // Validate tenant slug format (alphanumeric, hyphens, underscores)
+  const slugRegex = /^[a-zA-Z0-9_-]+$/;
+  if (!slugRegex.test(currentHost)) {
+    // Invalid slug format, redirect to 404 or home
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  // For admin and platform routes, don't rewrite
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/platform')) {
+    return NextResponse.next();
+  }
+
+  // Rewrite to tenant route
+  const tenantPath = `/${currentHost}${url.pathname}`;
+  return NextResponse.rewrite(new URL(tenantPath, req.url));
 }
