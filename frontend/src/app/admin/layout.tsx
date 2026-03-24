@@ -23,8 +23,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const token = localStorage.getItem("restsaas_token");
     setIsLogged(!!token);
-    // In a real app, we would fetch the user's plan here
-    // setUserPlan(fetchedPlan);
+    
+    if (token) {
+      try {
+        // Simple JWT payload decoder
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const email = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] || payload.email;
+        
+        if (email === "admin@tablehive.com") {
+          setUserPlan("Enterprise");
+        } else {
+          setUserPlan("Pro"); // Default for other registered users
+        }
+      } catch (e) {
+        console.error("Error decoding token", e);
+        setUserPlan("Free");
+      }
+    }
   }, [pathname]);
 
   const isLoginPage = pathname === "/admin";
