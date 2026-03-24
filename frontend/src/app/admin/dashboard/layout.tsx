@@ -37,11 +37,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <nav className="space-y-2">
-            <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 text-primary font-medium shadow-inner transition-all hover:bg-primary/20">
+            <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all font-medium">
               <LayoutDashboard size={20} />
               <span>Resumen</span>
             </Link>
-            <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all font-medium">
+            <Link href="/admin/dashboard/menu" className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 text-primary font-medium shadow-inner transition-all hover:bg-primary/20">
               <Utensils size={20} />
               <span>Menú</span>
             </Link>

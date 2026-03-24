@@ -34,7 +34,7 @@ A multi-tenant SaaS platform for restaurants, enabling them to have dedicated we
 2. [x] **Restaurants module**: Built GET/PUT endpoints and generic data interfaces.
 3. [x] **User-Restaurant relationship**: Migrated schema creating `UserRestaurants` junction mappings via EF Core.
 4. [x] **Admin dashboard basic**: Developed Next.js Sidebar layout and data-fetching Widgets.
-5. [ ] **Menu module**
+5. [x] **Menu module**: Built full CRUD for Categories and Items with dynamic frontend management.
 6. [ ] **Public website template** (Next.js Wildcard routing)
 7. [ ] **Slug routing** (Dynamic tenant resolution)
 8. [ ] **Image upload** (Supabase Storage)
