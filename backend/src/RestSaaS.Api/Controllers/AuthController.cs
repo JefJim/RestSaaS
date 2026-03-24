@@ -32,40 +32,23 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             return BadRequest(new { Message = "El correo ya está en uso." });
 
-        var slug = request.RestaurantName.ToLower().Replace(" ", "").Replace("'", "").Replace("-", "");
-        if (await _context.Restaurants.AnyAsync(r => r.Slug == slug))
-            return BadRequest(new { Message = "El nombre del restaurante ya está registrado." });
-
-        // 1. Create Restaurant
-        var restaurant = new Restaurant
-        {
-            Name = request.RestaurantName,
-            Slug = slug
-        };
-        _context.Restaurants.Add(restaurant);
-
-        // 2. Create User
+        // 1. Create User Only
         var user = new User
         {
             Email = request.Email,
+            Name = request.Email.Split('@')[0], // Default name
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = "User" 
+            Role = "User",
+            OnboardingCompleted = false 
         };
         _context.Users.Add(user);
-
-        // 3. Link User to Restaurant
-        var userRestaurant = new UserRestaurant
-        {
-            User = user,
-            Restaurant = restaurant,
-            AssignedRole = "RestaurantOwner"
-        };
-        _context.UserRestaurants.Add(userRestaurant);
-
         await _context.SaveChangesAsync();
 
-        var token = GenerateJwtToken(user, restaurant.Id);
-        return Ok(new { Token = token, RestaurantSlug = restaurant.Slug });
+        var token = GenerateJwtToken(user, null);
+        return Ok(new { 
+            Token = token, 
+            OnboardingCompleted = user.OnboardingCompleted 
+        });
     }
 
     [HttpPost("login")]
@@ -80,8 +63,11 @@ public class AuthController : ControllerBase
 
         var primaryRestaurantId = user.UserRestaurants.FirstOrDefault()?.RestaurantId;
         var token = GenerateJwtToken(user, primaryRestaurantId);
-
-        return Ok(new { Token = token });
+        
+        return Ok(new { 
+            Token = token,
+            OnboardingCompleted = user.OnboardingCompleted 
+        });
     }
 
     [HttpGet("test")] 
@@ -92,8 +78,11 @@ public class AuthController : ControllerBase
     {
         try
         {
+            User? user = null;
             string email = "";
             string oauthId = "";
+            string? name = null;
+            string? picture = null;
 
             if (!string.IsNullOrEmpty(dto.IdToken))
             {
@@ -104,10 +93,11 @@ public class AuthController : ControllerBase
                 var payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, settings);
                 email = payload.Email;
                 oauthId = payload.Subject;
+                name = payload.Name;
+                picture = payload.Picture;
             }
             else if (!string.IsNullOrEmpty(dto.AccessToken))
             {
-                // Validate AccessToken via Google's userinfo endpoint
                 using var client = new HttpClient();
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", dto.AccessToken);
                 var response = await client.GetAsync("https://www.googleapis.com/oauth2/v3/userinfo");
@@ -119,14 +109,16 @@ public class AuthController : ControllerBase
                 if (userInfo == null) return BadRequest(new { Message = "No se pudo obtener la información de usuario." });
                 email = userInfo.Email;
                 oauthId = userInfo.Sub;
+                name = userInfo.Name;
+                picture = userInfo.Picture;
             }
             else
             {
                 return BadRequest(new { Message = "Se requiere IdToken o AccessToken." });
             }
             
-            // Sync user...
-            var user = await _context.Users
+            // Sync user
+            user = await _context.Users
                 .Include(u => u.UserRestaurants)
                 .FirstOrDefaultAsync(u => u.OAuthProvider == "Google" && u.OAuthId == oauthId);
 
@@ -141,25 +133,32 @@ public class AuthController : ControllerBase
                     user = new User
                     {
                         Email = email,
+                        Name = name ?? email,
+                        ProfilePicture = picture,
                         OAuthProvider = "Google",
                         OAuthId = oauthId,
-                        Role = "User"
+                        Role = "User",
+                        OnboardingCompleted = false
                     };
                     _context.Users.Add(user);
-                    await _context.SaveChangesAsync();
                 }
                 else
                 {
                     user.OAuthProvider = "Google";
                     user.OAuthId = oauthId;
-                    await _context.SaveChangesAsync();
+                    if (string.IsNullOrEmpty(user.Name)) user.Name = name ?? user.Email;
+                    user.ProfilePicture = picture ?? user.ProfilePicture;
                 }
+                await _context.SaveChangesAsync();
             }
 
             var primaryRestaurantId = user.UserRestaurants.FirstOrDefault()?.RestaurantId;
             var token = GenerateJwtToken(user, primaryRestaurantId);
 
-            return Ok(new { Token = token });
+            return Ok(new { 
+                Token = token,
+                OnboardingCompleted = user.OnboardingCompleted 
+            });
         }
         catch (Exception ex)
         {
@@ -171,6 +170,8 @@ public class AuthController : ControllerBase
     {
         public string Sub { get; set; } = "";
         public string Email { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Picture { get; set; } = "";
     }
 
     private string GenerateJwtToken(User user, Guid? restaurantId)
