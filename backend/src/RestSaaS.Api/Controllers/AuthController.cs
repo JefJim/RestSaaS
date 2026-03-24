@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
             Email = request.Email,
             Name = request.Email.Split('@')[0], // Default name
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = "User",
+            PlatformRole = "PlatformUser",
             OnboardingCompleted = false 
         };
         _context.Users.Add(user);
@@ -137,7 +137,7 @@ public class AuthController : ControllerBase
                         ProfilePicture = picture,
                         OAuthProvider = "Google",
                         OAuthId = oauthId,
-                        Role = "User",
+                        PlatformRole = "PlatformUser",
                         OnboardingCompleted = false
                     };
                     _context.Users.Add(user);
@@ -180,7 +180,7 @@ public class AuthController : ControllerBase
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role)
+            new Claim(ClaimTypes.Role, user.PlatformRole)
         };
 
         if (restaurantId.HasValue)

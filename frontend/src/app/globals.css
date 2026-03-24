@@ -82,3 +82,24 @@
   66% { transform: translate(-20px, 20px) scale(0.9); }
   100% { transform: translate(0px, 0px) scale(1); }
 }
+
+/* react-phone-number-input dark mode fixes */
+.PhoneInputCountrySelect {
+  background-color: #0f172a !important; /* matching slate-900 border */
+  color: white !important;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.PhoneInputCountrySelect option {
+  background-color: #0f172a;
+  color: white;
+}
+
+.PhoneInputInput {
+  background-color: transparent;
+  color: white;
+  border: none;
+  outline: none;
+  width: 100%;
+}

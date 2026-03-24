@@ -19,13 +19,11 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
   const uploadImage = useCallback(async (file: File) => {
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file.');
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       alert('File size must be less than 5MB.');
       return;
@@ -38,7 +36,7 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
       formData.append('file', file);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
-      const response = await fetch(`${apiUrl}/api/storage/upload`, {
+      const response = await fetch(`${apiUrl}/api/upload/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -93,7 +91,8 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
 
     try {
       const token = localStorage.getItem('restsaas_token');
-      const response = await fetch(`http://localhost:8080/api/upload/image?imageUrl=${encodeURIComponent(value)}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
+      const response = await fetch(`${apiUrl}/api/upload/image?imageUrl=${encodeURIComponent(value)}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -112,9 +111,9 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
   }, [value, onChange]);
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-4 ${className || ""}`} suppressHydrationWarning>
       {value ? (
-        <div className="relative">
+        <div className="relative" suppressHydrationWarning>
           <img
             src={value}
             alt="Uploaded"
@@ -136,13 +135,14 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
           className={`
-            relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all
+            relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all
             ${dragActive
-              ? 'border-primary bg-primary/5'
-              : 'border-border/30 hover:border-primary/50 hover:bg-primary/5'
+              ? 'border-primary bg-primary/10 scale-[1.02] shadow-xl shadow-primary/10'
+              : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
             }
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           `}
+          suppressHydrationWarning
         >
           <input
             ref={fileInputRef}
@@ -154,17 +154,19 @@ export const ImageUpload = ({ value, onChange, disabled, className }: ImageUploa
           />
 
           {isUploading ? (
-            <div className="flex flex-col items-center space-y-2">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-sm text-foreground/60">Subiendo imagen...</p>
+            <div className="flex flex-col items-center space-y-3" suppressHydrationWarning>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+              <p className="text-sm font-bold text-primary animate-pulse">Subiendo imagen...</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center space-y-2">
-              <Upload className="h-8 w-8 text-foreground/40" />
+            <div className="flex flex-col items-center space-y-4" suppressHydrationWarning>
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/50 transition-colors">
+                <Upload className="h-6 w-6 text-white/40" />
+              </div>
               <div>
-                <p className="text-sm font-medium">Arrastra una imagen aquí</p>
-                <p className="text-xs text-foreground/50">o haz clic para seleccionar</p>
-                <p className="text-xs text-foreground/40 mt-1">PNG, JPG, WebP hasta 5MB</p>
+                <p className="text-sm font-bold">Arrastra tu logo aquí</p>
+                <p className="text-xs text-white/40 mt-1">O haz clic para explorar</p>
+                <p className="text-[10px] text-white/20 mt-3 font-medium uppercase tracking-widest">PNG, JPG up to 5MB</p>
               </div>
             </div>
           )}

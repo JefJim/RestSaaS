@@ -10,10 +10,13 @@ import {
   LogOut,
   ChevronRight,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  User
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { TenantProvider } from "@/context/TenantContext";
+import RestaurantSwitcher from "@/components/RestaurantSwitcher";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -50,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Menú Digital", href: "/admin/dashboard/menu", icon: <MenuIcon size={20} />, minPlan: "Free" },
     { name: "Reservaciones", href: "/admin/dashboard/reservations", icon: <Calendar size={20} />, minPlan: "Pro" },
     { name: "Suscripción", href: "/admin/dashboard/subscription", icon: <CreditCard size={20} />, minPlan: "Free" },
+    { name: "Personal", href: "/admin/dashboard/staff", icon: <User size={20} />, minPlan: "Free" },
     { name: "Configuración", href: "/admin/dashboard/settings", icon: <Settings size={20} />, minPlan: "Free" },
   ];
 
@@ -61,30 +65,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
 
   return (
-    <div className="flex h-screen bg-background font-sans overflow-hidden" suppressHydrationWarning={true}>
-      {/* Premium Sidebar - Only visible if logged in and NOT on login page */}
-      {shouldShowSidebar && (
-        <aside className="w-72 bg-surface/80 backdrop-blur-xl border-r border-border flex flex-col z-50 animate-in fade-in slide-in-from-left-4 duration-500">
-          <div className="p-8 flex items-center gap-3">
-            <div className="w-16 h-16 flex items-center justify-center relative overflow-hidden">
-            <Image 
-              src="/logo.png" 
-              alt="Logo" 
-              width={64} 
-              height={64} 
-              unoptimized
-              priority
-              style={{ width: '100%', height: 'auto' }}
-              className="brightness-0 invert drop-shadow-[0_0_12px_rgba(124,58,237,0.6)] scale-[2.2] transition-transform" 
-            />
-          </div>
-            <div>
-              <h2 className="text-xl font-black tracking-tighter text-foreground">TableHive</h2>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">Admin Portal</p>
+    <TenantProvider>
+      <div className="flex h-screen bg-background font-sans overflow-hidden" suppressHydrationWarning={true}>
+        {/* Premium Sidebar - Only visible if logged in and NOT on login page */}
+        {shouldShowSidebar && (
+          <aside className="w-72 bg-surface/80 backdrop-blur-xl border-r border-border flex flex-col z-50 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="p-8 flex items-center gap-3">
+              <div className="w-16 h-16 flex items-center justify-center relative overflow-hidden">
+                <Image 
+                  src="/logo.png" 
+                  alt="Logo" 
+                  width={64} 
+                  height={64} 
+                  unoptimized
+                  priority
+                  style={{ width: '100%', height: 'auto' }}
+                  className="brightness-0 invert drop-shadow-[0_0_12px_rgba(124,58,237,0.6)] scale-[2.2] transition-transform" 
+                />
+              </div>
+              <div>
+                <h2 className="text-xl font-black tracking-tighter text-foreground">TableHive</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">Admin Portal</p>
+              </div>
             </div>
-          </div>
 
-          <nav className="flex-1 px-4 mt-4 space-y-1.5 overflow-y-auto hide-scrollbar">
+            {/* Restaurant Context Switcher */}
+            <RestaurantSwitcher />
+
+            <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto hide-scrollbar">
             {filteredItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -145,5 +153,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </main>
     </div>
+    </TenantProvider>
   );
 }

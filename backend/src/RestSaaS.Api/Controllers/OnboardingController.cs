@@ -1,9 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RestSaaS.Core.Entities;
 using RestSaaS.Infrastructure.Data;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace RestSaaS.Api.Controllers;
 
@@ -13,10 +19,12 @@ namespace RestSaaS.Api.Controllers;
 public class OnboardingController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _config; // Injected IConfiguration
 
-    public OnboardingController(ApplicationDbContext context)
+    public OnboardingController(ApplicationDbContext context, IConfiguration config)
     {
         _context = context;
+        _config = config;
     }
 
     [HttpPost("complete")]
@@ -43,35 +51,126 @@ public class OnboardingController : ControllerBase
             Name = request.RestaurantName,
             Slug = request.Slug,
             LogoUrl = request.LogoUrl,
-            Description = request.Cuisine, // Using cuisine as part of description for now
-            // Add other fields if available in Restaurant entity
+            Description = request.Description,
+            PrimaryColor = request.PrimaryColor,
+            OwnerUserId = user.Id
         };
         _context.Restaurants.Add(restaurant);
 
-        // 3. Link User to Restaurant
-        var userRestaurant = new UserRestaurant
+        // 3. Create Settings
+        var settings = new Settings
         {
-            UserId = userId,
-            Restaurant = restaurant,
-            AssignedRole = "RestaurantOwner"
+            RestaurantId = restaurant.Id,
+            ContactPhone = request.Phone ?? string.Empty,
+            Address = request.Address ?? string.Empty,
+            ContactEmail = user.Email
         };
-        _context.UserRestaurants.Add(userRestaurant);
+        _context.Settings.Add(settings);
 
-        // 4. Create Default Category
+        // 4. Create Menu
+        var menu = new Menu
+        {
+            Name = "Carta Principal",
+            RestaurantId = restaurant.Id,
+            IsActive = true
+        };
+        _context.Menus.Add(menu);
+
+        // 5. Create Default Category
         var category = new MenuCategory
         {
             Name = "General",
-            Restaurant = restaurant,
-            Order = 0
+            Menu = menu,
+            RestaurantId = restaurant.Id,
+            DisplayOrder = 0
         };
         _context.MenuCategories.Add(category);
 
-        // 5. Update User Status
+        // 6. Link User to Restaurant
+        var userRestaurant = new UserRestaurant
+        {
+            UserId = userId,
+            RestaurantId = restaurant.Id,
+            Role = "Owner"
+        };
+        _context.UserRestaurants.Add(userRestaurant);
+
+        // 7. Create Subscription (Phase 1.2.3)
+        var planName = request.PlanId.ToLower() switch
+        {
+            "pro" => "Pro Tier",
+            "premium" => "Premium",
+            _ => "Core / Basic"
+        };
+
+        var plan = await _context.Plans.FirstOrDefaultAsync(p => p.Name == planName)
+                   ?? await _context.Plans.FirstOrDefaultAsync(); // Fallback to first available
+
+        if (plan == null)
+        {
+            return StatusCode(500, new { Message = "El sistema de planes no está inicializado. Contacte al administrador." });
+        }
+
+        var subscription = new Subscription
+        {
+            RestaurantId = restaurant.Id,
+            PlanId = plan.Id,
+            StartDate = DateTime.UtcNow,
+            Status = "Active",
+            IsActive = true
+        };
+
+        // Apply 14-day trial for Basic plan
+        if (request.PlanId.ToLower() == "basic" || request.PlanId.ToLower() == "free")
+        {
+            subscription.EndDate = DateTime.UtcNow.AddDays(14);
+            subscription.Status = "Trial";
+        }
+
+        _context.Subscriptions.Add(subscription);
+
+        // 8. Update User Status
         user.OnboardingCompleted = true;
         
         await _context.SaveChangesAsync();
 
-        return Ok(new { Message = "Onboarding completado con éxito.", RestaurantSlug = restaurant.Slug });
+        // 9. Generate New Token with RestaurantId (Phase 4.1)
+        var token = GenerateJwtToken(user, restaurant.Id);
+ 
+        return Ok(new { 
+            Message = "Onboarding completado con éxito.", 
+            RestaurantSlug = restaurant.Slug,
+            Token = token
+        });
+    }
+ 
+    private string GenerateJwtToken(User user, Guid restaurantId)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.PlatformRole),
+            new Claim("RestaurantId", restaurantId.ToString())
+        };
+ 
+        var jwtSettings = _config.GetSection("JwtSettings");
+        var secret = jwtSettings["Secret"] ?? "SuperSecretKeyForDevelopmentAndTestingOnly!123";
+        var issuer = jwtSettings["Issuer"] ?? "RestSaaS";
+        var audience = jwtSettings["Audience"] ?? "RestSaaS";
+ 
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+ 
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(7),
+            signingCredentials: creds
+        );
+ 
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 
@@ -80,8 +179,12 @@ public class OnboardingRequest
     public string RestaurantName { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string? LogoUrl { get; set; }
-    public string Cuisine { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string Address { get; set; } = string.Empty;
+    public string? Cuisine { get; set; }
+    public string? Description { get; set; }
+    public string? PrimaryColor { get; set; }
+    public string? Phone { get; set; }
+    public string? Address { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public string PlanId { get; set; } = "free";
 }

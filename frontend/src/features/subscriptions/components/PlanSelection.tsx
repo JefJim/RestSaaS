@@ -62,12 +62,11 @@ export const PlanSelection = () => {
   };
 
   const getIcon = (name: string) => {
-    switch (name.toLowerCase()) {
-      case 'free': return <Zap className="text-blue-500" />;
-      case 'pro': return <Shield className="text-primary" />;
-      case 'enterprise': return <Crown className="text-yellow-500" />;
-      default: return <Zap />;
-    }
+    const n = name.toLowerCase();
+    if (n.includes('basic')) return <Zap className="text-blue-500" />;
+    if (n.includes('pro')) return <Shield className="text-primary" />;
+    if (n.includes('premium')) return <Crown className="text-yellow-500" />;
+    return <Zap />;
   };
 
   if (loading) return <div className="animate-pulse space-y-4">Cargando planes...</div>;

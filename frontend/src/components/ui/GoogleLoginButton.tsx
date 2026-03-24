@@ -28,7 +28,12 @@ export function GoogleLoginButton({ mode = "signin" }: GoogleLoginButtonProps) {
         if (res.ok) {
           const data = await res.json();
           localStorage.setItem("restsaas_token", data.token);
-          router.push("/admin/dashboard");
+          
+          if (data.onboardingCompleted === false) {
+            router.push("/onboarding");
+          } else {
+            router.push("/admin/dashboard");
+          }
         } else {
           const errorText = await res.text();
           console.error("Backend Error:", errorText);

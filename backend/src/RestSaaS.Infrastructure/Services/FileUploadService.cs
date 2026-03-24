@@ -1,5 +1,6 @@
 using Supabase.Storage;
 using RestSaaS.Core.Interfaces;
+using Microsoft.AspNetCore.Http;
 
 namespace RestSaaS.Infrastructure.Services;
 
@@ -11,10 +12,13 @@ public class FileUploadService : IFileUploadService
     private const long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private readonly string[] ALLOWED_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".webp" };
 
-    public FileUploadService(Supabase.Client supabaseClient, ITenantService tenantService)
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public FileUploadService(Supabase.Client supabaseClient, ITenantService tenantService, IHttpContextAccessor httpContextAccessor)
     {
         _supabaseClient = supabaseClient;
         _tenantService = tenantService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<string> UploadImageAsync(Stream fileStream, string fileName, string contentType)
@@ -32,27 +36,43 @@ public class FileUploadService : IFileUploadService
             throw new ArgumentException($"File type '{extension}' is not allowed. Allowed types: {string.Join(", ", ALLOWED_EXTENSIONS)}");
         }
 
-        // Get current tenant
+        // Get current tenant or user context
         var tenantId = _tenantService.GetCurrentTenantId()?.ToString();
-        if (string.IsNullOrEmpty(tenantId))
+        var storagePrefix = tenantId;
+
+        if (string.IsNullOrEmpty(storagePrefix))
         {
-            throw new InvalidOperationException("No tenant context available.");
+            // Fallback to user ID for cases like onboarding where tenant isn't created yet
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new InvalidOperationException("No se pudo determinar el contexto de usuario o restaurante para la subida.");
+            }
+            storagePrefix = $"onboarding/{userId}";
         }
 
-        // Generate unique filename with tenant prefix
+        // Generate unique filename with prefix
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
         var uniqueFileName = $"{Guid.NewGuid()}_{fileNameWithoutExtension}{extension}";
-        var tenantPath = $"{tenantId}/{uniqueFileName}";
+        var tenantPath = $"{storagePrefix}/{uniqueFileName}";
 
         try
         {
+            var storage = _supabaseClient.Storage;
+            
+            // Check if bucket exists
+            try {
+                await storage.GetBucket(BUCKET_NAME);
+            } catch (Exception ex) {
+                throw new InvalidOperationException($"El bucket '{BUCKET_NAME}' no fue encontrado en Supabase. Por favor, créalo manualmente en tu panel de Supabase y asegúrate de marcarlo como 'Public'.", ex);
+            }
+
             // Convert stream to byte array
             using var memoryStream = new MemoryStream();
             await fileStream.CopyToAsync(memoryStream);
             var fileBytes = memoryStream.ToArray();
 
             // Upload to Supabase Storage
-            var storage = _supabaseClient.Storage;
             var bucket = storage.From(BUCKET_NAME);
 
             await bucket.Upload(fileBytes, tenantPath, new Supabase.Storage.FileOptions

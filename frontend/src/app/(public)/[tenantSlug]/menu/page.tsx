@@ -40,24 +40,15 @@ interface RestaurantData {
   }>;
 }
 
-async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
+async function getPublicData(slug: string) {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
-    const res = await fetch(`${apiUrl}/api/restaurants/slug/${slug}`, {
-      cache: 'no-store'
-    });
+    const res = await fetch(`${apiUrl}/api/public/${slug}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
     return null;
   }
-}
-
-async function getMenuData(slug: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
-  const res = await fetch(`${apiUrl}/api/restaurants/slug/${slug}/menu`, { cache: 'no-store' });
-  if (!res.ok) return null;
-  return res.json();
 }
 
 export default async function RestaurantMenuPage({
@@ -66,21 +57,20 @@ export default async function RestaurantMenuPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  const [restaurant, menu] = await Promise.all([
-    getRestaurantData(tenantSlug),
-    getMenuData(tenantSlug)
-  ]);
+  const data = await getPublicData(tenantSlug);
 
-  if (!restaurant || !menu) {
+  if (!data || !data.restaurant || !data.menu) {
     notFound();
   }
+
+  const { restaurant, menu } = data;
 
   const isOpen = () => {
     const now = new Date();
     const dayOfWeek = now.getDay();
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    const todayHours = restaurant.openingHours.find(h => h.dayOfWeek === dayOfWeek);
+    const todayHours = restaurant.openingHours?.find((h: any) => h.dayOfWeek === dayOfWeek);
     if (!todayHours) return false;
 
     const openTime = parseTime(todayHours.openTime);

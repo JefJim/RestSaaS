@@ -35,7 +35,12 @@ export const SignupForm = () => {
 
       // Store JWT securely
       localStorage.setItem("restsaas_token", data.token);
-      window.location.href = "/admin/dashboard"; 
+      
+      if (data.onboardingCompleted === false) {
+        window.location.href = "/onboarding";
+      } else {
+        window.location.href = "/admin/dashboard"; 
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -8,5 +8,5 @@ public class UserRestaurant : BaseEntity
     public Guid RestaurantId { get; set; }
     public virtual Restaurant Restaurant { get; set; } = null!;
     
-    public string AssignedRole { get; set; } = "Staff"; // RestaurantOwner, RestaurantAdmin, Staff
+    public string Role { get; set; } = "Staff"; // Owner, Admin, Staff
 }

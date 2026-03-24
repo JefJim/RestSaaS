@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 interface RestaurantData {
   id: string;
@@ -19,11 +20,10 @@ interface RestaurantData {
   }>;
 }
 
-async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
+async function getRestaurantData(slug: string) {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
-    const res = await fetch(`${apiUrl}/api/restaurants/slug/${slug}`, { cache: 'no-store' });
-    // For development, in production use ISR
+    const res = await fetch(`${apiUrl}/api/public/${slug}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -37,18 +37,20 @@ export default async function RestaurantLandingPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  const restaurant = await getRestaurantData(tenantSlug);
+  const data = await getRestaurantData(tenantSlug);
 
-  if (!restaurant) {
+  if (!data || !data.restaurant) {
     notFound();
   }
+
+  const restaurant = data.restaurant;
 
   const isOpen = () => {
     const now = new Date();
     const dayOfWeek = now.getDay(); // 0 = Sunday
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    const todayHours = restaurant.openingHours.find(h => h.dayOfWeek === dayOfWeek);
+    const todayHours = restaurant.openingHours?.find((h: any) => h.dayOfWeek === dayOfWeek);
     if (!todayHours) return false;
 
     const openTime = parseTime(todayHours.openTime);
@@ -87,29 +89,23 @@ export default async function RestaurantLandingPage({
         </p>
 
         <div className="flex gap-4 justify-center mb-8">
-          <a
+          <Link
             href={`/${tenantSlug}/menu`}
             className="px-8 py-4 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors"
           >
-            View Menu
-          </a>
-          <a
+            Ver Menú
+          </Link>
+          <Link
             href={`/${tenantSlug}/reservations`}
             className="px-8 py-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
           >
-            Book a Table
-          </a>
+            Reservar Mesa
+          </Link>
         </div>
 
-        {restaurant.settings.address && (
-          <div className="text-gray-600 mb-4">
-            <p className="font-medium">📍 {restaurant.settings.address}</p>
-          </div>
-        )}
-
-        {restaurant.settings.contactPhone && (
-          <div className="text-gray-600">
-            <p>📞 {restaurant.settings.contactPhone}</p>
+        {restaurant.description && (
+          <div className="text-gray-600 mb-4 max-w-lg mx-auto">
+            <p>{restaurant.description}</p>
           </div>
         )}
       </div>
