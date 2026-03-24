@@ -8,7 +8,7 @@ public static class DbInitializer
     public static void Initialize(ApplicationDbContext context)
     {
         // Apply migrations
-        context.Database.Migrate();
+        // context.Database.Migrate();
 
         // Check if restaurants already exist
         if (context.Restaurants.Any())

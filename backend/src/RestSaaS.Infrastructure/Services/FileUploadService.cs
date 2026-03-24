@@ -33,7 +33,7 @@ public class FileUploadService : IFileUploadService
         }
 
         // Get current tenant
-        var tenantId = _tenantService.GetCurrentTenantId();
+        var tenantId = _tenantService.GetCurrentTenantId()?.ToString();
         if (string.IsNullOrEmpty(tenantId))
         {
             throw new InvalidOperationException("No tenant context available.");
@@ -46,16 +46,23 @@ public class FileUploadService : IFileUploadService
 
         try
         {
+            // Convert stream to byte array
+            using var memoryStream = new MemoryStream();
+            await fileStream.CopyToAsync(memoryStream);
+            var fileBytes = memoryStream.ToArray();
+
             // Upload to Supabase Storage
             var storage = _supabaseClient.Storage;
-            await storage.From(BUCKET_NAME).Upload(tenantPath, fileStream, new FileOptions
+            var bucket = storage.From(BUCKET_NAME);
+
+            await bucket.Upload(fileBytes, tenantPath, new Supabase.Storage.FileOptions
             {
                 ContentType = contentType,
                 Upsert = true
             });
 
             // Get public URL
-            var publicUrl = storage.From(BUCKET_NAME).GetPublicUrl(tenantPath);
+            var publicUrl = bucket.GetPublicUrl(tenantPath);
             return publicUrl;
         }
         catch (Exception ex)
