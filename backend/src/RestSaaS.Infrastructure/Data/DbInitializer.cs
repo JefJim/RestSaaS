@@ -83,5 +83,33 @@ public static class DbInitializer
 
         context.MenuItems.AddRange(items);
         context.SaveChanges();
+
+        // Seed Plans
+        if (!context.Plans.Any())
+        {
+            var plans = new Plan[]
+            {
+                new Plan { Name = "Free", Price = 0, MaxMenuItems = 10, MaxUsers = 1, Features = "[\"Menú Digital\", \"QR Code\"]" },
+                new Plan { Name = "Pro", Price = 29, MaxMenuItems = 100, MaxUsers = 5, Features = "[\"Menú Digital\", \"QR Code\", \"Reservaciones\", \"Soporte Chat\"]" },
+                new Plan { Name = "Enterprise", Price = 99, MaxMenuItems = 1000, MaxUsers = 20, Features = "[\"Menú Digital\", \"QR Code\", \"Reservaciones\", \"Soporte 24/7\", \"Reportes Avanzados\", \"Multi-sucursal\"]" }
+            };
+            context.Plans.AddRange(plans);
+            context.SaveChanges();
+
+            // Link Pizza Luna to Pro Plan
+            if (!context.Subscriptions.Where(s => s.RestaurantId == pizzaLuna.Id).Any())
+            {
+                var proPlan = plans[1];
+                context.Subscriptions.Add(new Subscription
+                {
+                    RestaurantId = pizzaLuna.Id,
+                    PlanId = proPlan.Id,
+                    StartDate = DateTime.UtcNow,
+                    IsActive = true,
+                    Status = "Active"
+                });
+                context.SaveChanges();
+            }
+        }
     }
 }

@@ -66,8 +66,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Temporarily disabled due to migration issues
-        // DbInitializer.Initialize(context);
+        DbInitializer.Initialize(context);
     }
     catch (Exception ex)
     {

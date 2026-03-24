@@ -23,6 +23,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Reservation> Reservations { get; set; } = null!;
     public DbSet<Settings> Settings { get; set; } = null!;
     public DbSet<OpeningHours> OpeningHours { get; set; } = null!;
+    public DbSet<Plan> Plans { get; set; } = null!;
+    public DbSet<Subscription> Subscriptions { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +40,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Reservation>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
         modelBuilder.Entity<Settings>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
         modelBuilder.Entity<OpeningHours>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
+        modelBuilder.Entity<Subscription>().HasQueryFilter(e => !tenantId.HasValue || e.RestaurantId == tenantId);
     }
     
     public override int SaveChanges()

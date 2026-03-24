@@ -39,6 +39,6 @@ A multi-tenant SaaS platform for restaurants, enabling them to have dedicated we
 7. [x] **Slug routing** (Dynamic tenant resolution) - COMPLETED: Enhanced middleware for robust subdomain/slug routing with validation and production support.
 8. [x] **Image upload** (Supabase Storage) - COMPLETED: Integrated Supabase Storage with file upload service, image management UI, and secure upload endpoints.
 9. [x] **Reservations** - COMPLETED: Implemented reservation system with public booking form, admin management interface, and status tracking.
-10. [ ] **Subscriptions** (Plans & Billing)
+10. [x] **Subscriptions** (Plans & Billing) - COMPLETED: Implemented Plan and Subscription entities, pricing tier seeding, and admin selection UI.
 11. [ ] **Subdomains** (Wildcard DNS configuration)
 12. [ ] **Orders**
