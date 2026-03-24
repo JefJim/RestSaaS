@@ -1,0 +1,118 @@
+﻿docker : --progress is 
+a global compose flag, 
+better use `docker 
+compose --progress xx 
+build ...
+En línea: 1 Carácter: 1
++ docker compose build 
+frontend --progress 
+plain > build_log.txt 
+2>&1
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (--progress is   
+  a...ss xx build .    
+..:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+time="2026-03-23T15:17:
+07-06:00" 
+level=warning msg="D:\\
+RestSaaS\\infrastructur
+e\\docker\\docker-compo
+se.yml: the attribute 
+`version` is obsolete, 
+it will be ignored, 
+please remove it to 
+avoid potential 
+confusion"
+ Image docker-frontend 
+Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 503B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 437B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:18-alpine
+#3 DONE 0.4s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [builder 1/6] FROM docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e
+#5 resolve docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e 0.0s done
+#5 DONE 0.0s
+
+#6 [builder 2/6] WORKDIR /app
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 1.77MB 0.7s done
+#7 DONE 0.7s
+
+#8 [builder 3/6] COPY package.json package-lock.json ./
+#8 CACHED
+
+#9 [builder 4/6] RUN npm ci
+#9 CACHED
+
+#10 [builder 5/6] COPY . .
+#10 CACHED
+
+#11 [builder 6/6] RUN npm run build
+#11 0.378 
+#11 0.378 > frontend@0.1.0 build
+#11 0.378 > next build
+#11 0.378 
+#11 0.530 You are using Node.js 18.20.8. For Next.js, Node.js version ">=20.9.0" is required.
+#11 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 6/6] RUN npm run build:
+0.378 
+0.378 > frontend@0.1.0 build
+0.378 > next build
+0.378 
+0.530 You are using Node.js 18.20.8. For Next.js, Node.js version ">=20.9.0" is required.
+------
+Dockerfile:6
+
+--------------------
+
+   4 |     RUN npm ci
+
+   5 |     COPY . .
+
+   6 | >>> RUN npm run 
+build
+
+   7 |     
+
+   8 |     FROM 
+node:18-alpine
+
+--------------------
+
+failed to solve: 
+process "/bin/sh -c 
+npm run build" did not 
+complete successfully: 
+exit code: 1
+
+
+
+View build details: doc
+ker-desktop://dashboard
+/build/default/default/
+koqx70fpf9rv42eay1x8rod
+bu
+

@@ -1,0 +1,83 @@
+using Microsoft.EntityFrameworkCore;
+using RestSaaS.Core.Interfaces;
+using RestSaaS.Infrastructure.Data;
+using RestSaaS.Infrastructure.Tenancy;
+using RestSaaS.Api.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenApi();
+
+// Clean Architecture: Register Infrastructure & Core Dependencies
+builder.Services.AddScoped<ITenantService, TenantService>();
+
+// JWT Authentication
+var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "SuperSecretKeyForDevelopmentAndTestingOnly!123";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "RestSaaS",
+            ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "RestSaaS",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+    });
+
+builder.Services.AddControllers();
+
+// Database Context
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var app = builder.Build();
+
+// Run migrations and seeder automatically
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        DbInitializer.Initialize(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred seeding the DB.");
+    }
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseMiddleware<TenantResolutionMiddleware>();
+
+app.MapControllers();
+
+// Basic health check endpoint
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Platform = "RestSaaS API" }))
+   .WithName("HealthCheck");
+
+// Public statistics endpoint
+app.MapGet("/api/stats", async (ApplicationDbContext db) =>
+{
+    var count = await db.Restaurants.CountAsync();
+    return Results.Ok(new { restaurantCount = count });
+})
+.WithName("GetStats");
+
+app.Run();
