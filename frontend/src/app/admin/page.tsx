@@ -14,7 +14,7 @@ export default function LoginPage() {
         &larr; Volver al inicio
       </Link>
 
-      <div className="z-10 w-full flex flex-col items-center">
+      <div className="z-10 w-full flex flex-col items-center" suppressHydrationWarning={true}>
         <Image
           src="/logo.png"
           alt="TableHive Logo"

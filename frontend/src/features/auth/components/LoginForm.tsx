@@ -39,7 +39,7 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md p-8 rounded-3xl glass dark:glass-dark shadow-2xl relative overflow-hidden">
+    <div className="w-full max-w-md p-8 rounded-3xl glass dark:glass-dark shadow-2xl relative overflow-hidden" suppressHydrationWarning>
       <div className="absolute top-0 right-0 w-32 h-32 bg-primary rounded-full mix-blend-multiply filter blur-2xl opacity-20 -z-10"></div>
       
       <div className="mb-8 text-center">
@@ -77,9 +77,11 @@ export const LoginForm = () => {
           {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
         </Button>
 
-        <div className="relative my-2">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/50"></span></div>
-          <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold"><span className="bg-background px-2 text-foreground/40">O continúa con</span></div>
+          <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
+            <span className="bg-[#f8f9fa] dark:bg-[#0f1115] px-4 text-foreground/40">O continúa con</span>
+          </div>
         </div>
 
         <GoogleLoginButton />
