@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, ExternalLink, TrendingUp, Users, Eye } from "lucide-react";
+import { Copy, ExternalLink, TrendingUp, Users, Eye, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface RestaurantData {

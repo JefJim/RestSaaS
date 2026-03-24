@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden selection:bg-primary/30">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden selection:bg-primary/30" suppressHydrationWarning={true}>
       
       {/* Visual background elements */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>

@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="flex h-screen bg-background font-sans overflow-hidden">
+    <div className="flex h-screen bg-background font-sans overflow-hidden" suppressHydrationWarning={true}>
       {/* Premium Sidebar */}
       <aside className="w-72 bg-surface/80 backdrop-blur-xl border-r border-border flex flex-col z-50">
         <div className="p-8 flex items-center gap-3">
@@ -88,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
         <div className="fixed bottom-0 left-72 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
 
-        <div className="p-8 md:p-12">
+        <div className="p-8 md:p-12" suppressHydrationWarning={true}>
           {children}
         </div>
       </main>
