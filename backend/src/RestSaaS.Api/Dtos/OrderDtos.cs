@@ -15,7 +15,8 @@ public class CreateOrderItemDto
 
 public class GoogleLoginDto
 {
-    public string IdToken { get; set; } = string.Empty;
+    public string? IdToken { get; set; }
+    public string? AccessToken { get; set; }
 }
 
 public class OrderResponseDto

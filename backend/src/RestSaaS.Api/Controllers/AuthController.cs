@@ -84,38 +84,65 @@ public class AuthController : ControllerBase
         return Ok(new { Token = token });
     }
 
+    [HttpGet("test")] 
+    public IActionResult Test() => Ok(new { Message = "Auth Controller is reachable at api/auth/test" });
+
     [HttpPost("google")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
     {
         try
         {
-            var settings = new GoogleJsonWebSignature.ValidationSettings
-            {
-                Audience = new[] { _config["Google:ClientId"] }
-            };
+            string email = "";
+            string oauthId = "";
 
-            var payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, settings);
+            if (!string.IsNullOrEmpty(dto.IdToken))
+            {
+                var settings = new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { _config["Google:ClientId"] }
+                };
+                var payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, settings);
+                email = payload.Email;
+                oauthId = payload.Subject;
+            }
+            else if (!string.IsNullOrEmpty(dto.AccessToken))
+            {
+                // Validate AccessToken via Google's userinfo endpoint
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", dto.AccessToken);
+                var response = await client.GetAsync("https://www.googleapis.com/oauth2/v3/userinfo");
+                
+                if (!response.IsSuccessStatusCode)
+                    return BadRequest(new { Message = "Token de acceso de Google inválido." });
+
+                var userInfo = await response.Content.ReadFromJsonAsync<GoogleUserInfo>();
+                if (userInfo == null) return BadRequest(new { Message = "No se pudo obtener la información de usuario." });
+                email = userInfo.Email;
+                oauthId = userInfo.Sub;
+            }
+            else
+            {
+                return BadRequest(new { Message = "Se requiere IdToken o AccessToken." });
+            }
             
-            // 1. Find user by OAuth info
+            // Sync user...
             var user = await _context.Users
                 .Include(u => u.UserRestaurants)
-                .FirstOrDefaultAsync(u => u.OAuthProvider == "Google" && u.OAuthId == payload.Subject);
+                .FirstOrDefaultAsync(u => u.OAuthProvider == "Google" && u.OAuthId == oauthId);
 
             if (user == null)
             {
-                // 2. Find by email if not found by OAuth
                 user = await _context.Users
                     .Include(u => u.UserRestaurants)
-                    .FirstOrDefaultAsync(u => u.Email == payload.Email);
+                    .FirstOrDefaultAsync(u => u.Email == email);
 
                 if (user == null)
                 {
-                    // 3. Create new user
                     user = new User
                     {
-                        Email = payload.Email,
+                        Email = email,
                         OAuthProvider = "Google",
-                        OAuthId = payload.Subject,
+                        OAuthId = oauthId,
                         Role = "User"
                     };
                     _context.Users.Add(user);
@@ -123,9 +150,8 @@ public class AuthController : ControllerBase
                 }
                 else
                 {
-                    // Update existing user with Google ID
                     user.OAuthProvider = "Google";
-                    user.OAuthId = payload.Subject;
+                    user.OAuthId = oauthId;
                     await _context.SaveChangesAsync();
                 }
             }
@@ -135,14 +161,16 @@ public class AuthController : ControllerBase
 
             return Ok(new { Token = token });
         }
-        catch (InvalidJwtException)
-        {
-            return BadRequest(new { Message = "Token de Google inválido." });
-        }
         catch (Exception ex)
         {
-            return StatusCode(500, new { Message = "Error interno.", Detail = ex.Message });
+            return StatusCode(500, new { Message = "Error en la autenticación con Google.", Detail = ex.Message });
         }
+    }
+
+    private class GoogleUserInfo
+    {
+        public string Sub { get; set; } = "";
+        public string Email { get; set; } = "";
     }
 
     private string GenerateJwtToken(User user, Guid? restaurantId)
