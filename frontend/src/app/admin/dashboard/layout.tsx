@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Utensils size={20} />
               <span>Menú</span>
             </Link>
-            <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all font-medium">
+            <Link href="/admin/dashboard/reservations" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-all font-medium">
               <CalendarDays size={20} />
               <span>Reservaciones</span>
             </Link>

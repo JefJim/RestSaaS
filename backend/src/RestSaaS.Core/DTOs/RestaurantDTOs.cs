@@ -59,3 +59,20 @@ public class CreateReservationDto
     public int PartySize { get; set; }
     public DateTime ReservationTime { get; set; }
 }
+
+public class ReservationDto
+{
+    public Guid Id { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerPhone { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public int PartySize { get; set; }
+    public DateTime ReservationTime { get; set; }
+    public string Status { get; set; } = "Pending";
+    public DateTime CreatedAt { get; set; }
+}
+
+public class UpdateReservationStatusDto
+{
+    public string Status { get; set; } = string.Empty; // Pending, Confirmed, Cancelled, Completed
+}

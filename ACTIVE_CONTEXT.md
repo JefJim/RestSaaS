@@ -38,7 +38,7 @@ A multi-tenant SaaS platform for restaurants, enabling them to have dedicated we
 6. [x] **Public website template** (Next.js Wildcard routing) - COMPLETED: Dynamic public pages with real API data, menu display, and reservation forms.
 7. [x] **Slug routing** (Dynamic tenant resolution) - COMPLETED: Enhanced middleware for robust subdomain/slug routing with validation and production support.
 8. [x] **Image upload** (Supabase Storage) - COMPLETED: Integrated Supabase Storage with file upload service, image management UI, and secure upload endpoints.
-9. [ ] **Reservations**
+9. [x] **Reservations** - COMPLETED: Implemented reservation system with public booking form, admin management interface, and status tracking.
 10. [ ] **Subscriptions** (Plans & Billing)
 11. [ ] **Subdomains** (Wildcard DNS configuration)
 12. [ ] **Orders**
