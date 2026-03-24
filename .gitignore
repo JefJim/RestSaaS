@@ -12,8 +12,8 @@ frontend/.vercel
 # .NET
 [Bb]in/
 [Oo]bj/
-backend/RestSaaS.Api/appsettings.Development.json
-backend/RestSaaS.Api/appsettings.json
+backend/src/RestSaaS.Api/appsettings.Development.json
+backend/src/RestSaaS.Api/appsettings.json
 *.user
 *.userosscache
 *.sln.docstates
