@@ -26,11 +26,11 @@ public class ReservationsController : ControllerBase
     public async Task<IActionResult> GetReservations()
     {
         var tenantId = _tenantService.GetCurrentTenantId();
-        if (string.IsNullOrEmpty(tenantId))
+        if (!tenantId.HasValue)
             return BadRequest("No tenant context");
 
         var reservations = await _context.Reservations
-            .Where(r => r.RestaurantId.ToString() == tenantId)
+            .Where(r => r.RestaurantId == tenantId.Value)
             .OrderByDescending(r => r.ReservationTime)
             .Select(r => new ReservationDto
             {
@@ -52,11 +52,11 @@ public class ReservationsController : ControllerBase
     public async Task<IActionResult> UpdateReservationStatus(Guid id, [FromBody] UpdateReservationStatusDto dto)
     {
         var tenantId = _tenantService.GetCurrentTenantId();
-        if (string.IsNullOrEmpty(tenantId))
+        if (!tenantId.HasValue)
             return BadRequest("No tenant context");
 
         var reservation = await _context.Reservations
-            .FirstOrDefaultAsync(r => r.Id == id && r.RestaurantId.ToString() == tenantId);
+            .FirstOrDefaultAsync(r => r.Id == id && r.RestaurantId == tenantId.Value);
 
         if (reservation == null)
             return NotFound("Reservation not found");
@@ -76,11 +76,11 @@ public class ReservationsController : ControllerBase
     public async Task<IActionResult> DeleteReservation(Guid id)
     {
         var tenantId = _tenantService.GetCurrentTenantId();
-        if (string.IsNullOrEmpty(tenantId))
+        if (!tenantId.HasValue)
             return BadRequest("No tenant context");
 
         var reservation = await _context.Reservations
-            .FirstOrDefaultAsync(r => r.Id == id && r.RestaurantId.ToString() == tenantId);
+            .FirstOrDefaultAsync(r => r.Id == id && r.RestaurantId == tenantId.Value);
 
         if (reservation == null)
             return NotFound("Reservation not found");

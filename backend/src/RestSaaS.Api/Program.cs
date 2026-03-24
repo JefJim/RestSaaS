@@ -20,6 +20,12 @@ builder.Services.AddScoped(provider =>
 {
     var supabaseUrl = builder.Configuration["Supabase:Url"];
     var supabaseKey = builder.Configuration["Supabase:ServiceRoleKey"];
+
+    if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
+    {
+        throw new InvalidOperationException("Supabase configuration is missing. Please check Supabase:Url and Supabase:ServiceRoleKey in appsettings.json");
+    }
+
     return new Supabase.Client(supabaseUrl, supabaseKey);
 });
 
@@ -47,7 +53,9 @@ builder.Services.AddControllers();
 
 // Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+           .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 var app = builder.Build();
 
@@ -58,7 +66,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        DbInitializer.Initialize(context);
+        // Temporarily disabled due to migration issues
+        // DbInitializer.Initialize(context);
     }
     catch (Exception ex)
     {

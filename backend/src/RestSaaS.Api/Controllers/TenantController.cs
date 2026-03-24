@@ -124,3 +124,19 @@ public class TenantController : ControllerBase
 
         return Ok(new { message = "Reservation request submitted successfully" });
     }
+
+    private string GetDayName(int dayOfWeek)
+    {
+        return dayOfWeek switch
+        {
+            0 => "Domingo",
+            1 => "Lunes",
+            2 => "Martes",
+            3 => "Miércoles",
+            4 => "Jueves",
+            5 => "Viernes",
+            6 => "Sábado",
+            _ => "Desconocido"
+        };
+    }
+}
