@@ -1,4 +1,66 @@
 import Image from "next/image";
+import { notFound } from 'next/navigation';
+
+interface MenuData {
+  id: string;
+  name: string;
+  categories: Array<{
+    id: string;
+    name: string;
+    displayOrder: number;
+    items: Array<{
+      id: string;
+      name: string;
+      description: string;
+      price: number;
+      imageUrl: string;
+      isAvailable: boolean;
+    }>;
+  }>;
+}
+
+interface RestaurantData {
+  id: string;
+  name: string;
+  slug: string;
+  settings: {
+    contactEmail: string;
+    contactPhone: string;
+    whatsAppNumber: string;
+    address: string;
+    themeConfig: string;
+  };
+  openingHours: Array<{
+    dayOfWeek: number;
+    dayName: string;
+    openTime: string;
+    closeTime: string;
+  }>;
+}
+
+async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenant/${slug}`, {
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getMenuData(slug: string): Promise<MenuData | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/tenant/${slug}/menu`, {
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 export default async function RestaurantMenuPage({
   params,
@@ -6,29 +68,59 @@ export default async function RestaurantMenuPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
+  const [restaurant, menu] = await Promise.all([
+    getRestaurantData(tenantSlug),
+    getMenuData(tenantSlug)
+  ]);
 
-  // Placeholder data - in a real app this comes from the database via tenantSlug
-  const restaurantName = tenantSlug.replace(/-/g, " ");
-  
+  if (!restaurant || !menu) {
+    notFound();
+  }
+
+  const isOpen = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    const todayHours = restaurant.openingHours.find(h => h.dayOfWeek === dayOfWeek);
+    if (!todayHours) return false;
+
+    const openTime = parseTime(todayHours.openTime);
+    const closeTime = parseTime(todayHours.closeTime);
+
+    return currentTime >= openTime && currentTime <= closeTime;
+  };
+
+  const parseTime = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground font-sans pb-24 selection:bg-primary/30">
       {/* Dynamic Header */}
       <div className="relative h-[35vh] md:h-[45vh] w-full bg-surface-dark overflow-hidden flex items-end">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-black opacity-80 z-0"></div>
-        
+
         {/* Abstract shapes */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary rounded-full mix-blend-screen filter blur-3xl opacity-40 animate-blob"></div>
         <div className="absolute bottom-[-20%] left-[-10%] w-96 h-96 bg-secondary rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
 
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10"></div>
-        
+
         <div className="relative z-20 w-full max-w-5xl mx-auto px-6 pb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 text-sm font-medium mb-4 backdrop-blur-md border border-white/20">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-            Open Now
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4 backdrop-blur-md border border-white/20 ${
+            isOpen()
+              ? 'bg-green-500/20 text-green-100'
+              : 'bg-red-500/20 text-red-100'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              isOpen() ? 'bg-green-400' : 'bg-red-400'
+            } animate-pulse`}></span>
+            {isOpen() ? 'Open Now' : 'Closed'}
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold text-white capitalize tracking-tighter shadow-sm">
-            {restaurantName}
+            {restaurant.name}
           </h1>
           <p className="text-white/80 mt-2 text-lg md:text-xl font-medium max-w-xl">
             Experience culinary excellence. Fresh ingredients, masterful preparation.
@@ -37,73 +129,68 @@ export default async function RestaurantMenuPage({
       </div>
 
       <div className="max-w-5xl mx-auto px-6 -mt-8 relative z-30">
-        
-        {/* Category Navigation (Horizontal scrollable) */}
+
+        {/* Category Navigation */}
         <div className="flex gap-3 overflow-x-auto pb-6 hide-scrollbar">
-          {["Featured", "Starters", "Main Courses", "Desserts", "Beverages"].map((cat, i) => (
-            <button 
-              key={cat}
+          {menu.categories.map((cat, i) => (
+            <button
+              key={cat.id}
               className={`whitespace-nowrap px-6 py-2.5 rounded-full font-semibold transition-all shadow-sm
-                ${i === 0 
-                  ? 'bg-foreground text-background hover:scale-105' 
+                ${i === 0
+                  ? 'bg-foreground text-background hover:scale-105'
                   : 'glass text-foreground hover:bg-white/40 dark:hover:bg-white/10'}`}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Menu Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-          
-          {/* Menu Item Card 1 */}
-          <div className="group glass rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col dark:glass-dark">
-            <div className="h-48 bg-zinc-200 dark:bg-zinc-800 relative overflow-hidden">
-               {/* Image placeholder */}
-               <div className="absolute inset-0 bg-gradient-to-tr from-zinc-300 to-zinc-100 dark:from-zinc-800 dark:to-zinc-700"></div>
-               <div className="absolute top-3 right-3 bg-white/90 dark:bg-black/80 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                 Popular
-               </div>
-            </div>
-            <div className="p-6 flex flex-col flex-1">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold tracking-tight">Classic Burger</h3>
-                <span className="text-lg font-bold text-primary">₡4,500</span>
-              </div>
-              <p className="text-foreground/60 text-sm leading-relaxed mb-6 flex-1">
-                Premium beef patty, fresh lettuce, heirloom tomato, and our signature house sauce on a toasted brioche bun.
-              </p>
-              <button className="w-full py-3 rounded-xl bg-primary/10 text-primary font-bold hover:bg-primary hover:text-white transition-colors">
-                Add to Order
-              </button>
+        {/* Menu Items */}
+        {menu.categories.map(category => (
+          <div key={category.id} className="mb-12">
+            <h2 className="text-3xl font-bold mb-6 text-foreground">{category.name}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {category.items.map(item => (
+                <div key={item.id} className="group glass rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col dark:glass-dark">
+                  <div className="h-48 bg-zinc-200 dark:bg-zinc-800 relative overflow-hidden">
+                    {item.imageUrl ? (
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-tr from-zinc-300 to-zinc-100 dark:from-zinc-800 dark:to-zinc-700"></div>
+                    )}
+                  </div>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-bold tracking-tight">{item.name}</h3>
+                      <span className="text-lg font-bold text-primary">₡{item.price.toLocaleString()}</span>
+                    </div>
+                    <p className="text-foreground/60 text-sm leading-relaxed mb-6 flex-1">
+                      {item.description}
+                    </p>
+                    <button className="w-full py-3 rounded-xl bg-primary/10 text-primary font-bold hover:bg-primary hover:text-white transition-colors">
+                      Add to Order
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+        ))}
 
-          {/* Menu Item Card 2 */}
-          <div className="group glass rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col dark:glass-dark">
-            <div className="h-48 bg-zinc-200 dark:bg-zinc-800 relative overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-tr from-zinc-300 to-zinc-100 dark:from-zinc-800 dark:to-zinc-700"></div>
-            </div>
-            <div className="p-6 flex flex-col flex-1">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold tracking-tight">Margherita Pizza</h3>
-                <span className="text-lg font-bold text-primary">₡6,000</span>
-              </div>
-              <p className="text-foreground/60 text-sm leading-relaxed mb-6 flex-1">
-                San Marzano tomato sauce, fresh mozzarella di bufala, basil leaves, and extra virgin olive oil.
-              </p>
-              <button className="w-full py-3 rounded-xl bg-primary/10 text-primary font-bold hover:bg-primary hover:text-white transition-colors">
-                Add to Order
-              </button>
-            </div>
+        {menu.categories.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-foreground/60">Menu coming soon...</p>
           </div>
-          
-           {/* Menu Item Card 3 */}
-           <div className="group glass rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col dark:glass-dark hidden lg:flex">
-            <div className="h-48 bg-zinc-200 dark:bg-zinc-800 relative overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-tr from-zinc-300 to-zinc-100 dark:from-zinc-800 dark:to-zinc-700"></div>
-            </div>
-            <div className="p-6 flex flex-col flex-1">
+        )}
+      </div>
+    </main>
+  );
+}
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-xl font-bold tracking-tight">Truffle Fries</h3>
                 <span className="text-lg font-bold text-primary">₡2,800</span>

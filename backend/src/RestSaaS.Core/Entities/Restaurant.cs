@@ -9,4 +9,6 @@ public class Restaurant : BaseEntity
     
     // Navigation properties
     public virtual ICollection<UserRestaurant> UserRestaurants { get; set; } = new List<UserRestaurant>();
+    public virtual Settings? Settings { get; set; }
+    public virtual ICollection<OpeningHours> OpeningHours { get; set; } = new List<OpeningHours>();
 }
