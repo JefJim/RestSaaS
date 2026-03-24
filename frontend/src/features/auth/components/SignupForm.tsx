@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { GoogleLoginButton } from "@/components/ui/GoogleLoginButton";
 import Link from "next/link";
 
 export const SignupForm = () => {
@@ -101,6 +102,13 @@ export const SignupForm = () => {
         <Button type="submit" className="w-full mt-4" disabled={loading || !agreed}>
           {loading ? "Creando cuenta..." : "Regístrate Ahora"}
         </Button>
+
+        <div className="relative my-2">
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/50"></span></div>
+          <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold"><span className="bg-background px-2 text-foreground/40">O regístrate con</span></div>
+        </div>
+
+        <GoogleLoginButton />
       </form>
     </div>
   );
