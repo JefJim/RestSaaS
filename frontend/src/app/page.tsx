@@ -40,7 +40,7 @@ export default async function Home() {
           <span className="text-3xl font-black tracking-tighter text-foreground selection:text-white">TableHive</span>
         </div>
         <div className="flex gap-4 items-center">
-          <Link href="/admin" className="px-6 py-2.5 text-sm font-bold text-foreground/70 hover:text-primary transition-all uppercase tracking-widest">
+          <Link href="/login" className="px-6 py-2.5 text-sm font-bold text-foreground/70 hover:text-primary transition-all uppercase tracking-widest">
             Iniciar Sesión
           </Link>
           <Link href="/signup" className="px-8 py-3 text-sm font-black text-white bg-primary hover:bg-primary-dark rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">

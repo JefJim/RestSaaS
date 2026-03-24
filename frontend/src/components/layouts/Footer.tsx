@@ -20,7 +20,7 @@ export const Footer = () => {
         <div className="flex flex-wrap justify-center gap-6 text-sm font-medium text-foreground/70">
           <Link href="/terms" className="hover:text-primary transition-colors">Términos de Servicio</Link>
           <Link href="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link>
-          <Link href="/admin" className="hover:text-primary transition-colors">Acceso a Restaurantes</Link>
+          <Link href="/login" className="hover:text-primary transition-colors">Acceso a Restaurantes</Link>
         </div>
 
         <div className="text-sm text-foreground/50">

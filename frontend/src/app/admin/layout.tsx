@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [pathname]);
 
-  const isLoginPage = pathname === "/admin";
+  const isLoginPage = pathname === "/login";
   const shouldShowSidebar = isLogged && !isLoginPage;
 
   const menuItems = [
@@ -123,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               onClick={() => {
                 localStorage.removeItem("restsaas_token");
-                window.location.href = "/admin";
+                window.location.href = "/login";
               }}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-red-500 hover:bg-red-500/5 transition-colors font-bold text-sm"
             >

@@ -21,7 +21,7 @@ export default function SignupPage() {
 
         <p className="mt-8 text-sm text-foreground/60 font-medium">
           ¿Ya tienes una cuenta?{" "}
-          <Link href="/admin" className="text-secondary hover:underline">
+          <Link href="/login" className="text-secondary hover:underline">
             Iniciar Sesión
           </Link>
         </p>
