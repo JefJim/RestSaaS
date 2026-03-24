@@ -81,6 +81,24 @@ public class MenusController : ControllerBase
         return Ok(item);
     }
 
+    [HttpPut("{menuId}/items/{itemId}")]
+    public async Task<IActionResult> UpdateItem(Guid menuId, Guid itemId, [FromBody] UpdateMenuItemDto dto)
+    {
+        var item = await _context.MenuItems
+            .Include(i => i.Category)
+            .FirstOrDefaultAsync(i => i.Id == itemId && i.Category.MenuId == menuId);
+
+        if (item == null) return NotFound();
+
+        item.Name = dto.Name;
+        item.Description = dto.Description;
+        item.Price = dto.Price;
+        item.ImageUrl = dto.ImageUrl;
+
+        await _context.SaveChangesAsync();
+        return Ok(item);
+    }
+
     [HttpDelete("items/{id}")]
     public async Task<IActionResult> DeleteItem(Guid id)
     {

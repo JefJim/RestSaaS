@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RestSaaS.Core.Interfaces;
 using RestSaaS.Infrastructure.Data;
 using RestSaaS.Infrastructure.Tenancy;
+using RestSaaS.Infrastructure.Services;
 using RestSaaS.Api.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,17 @@ builder.Services.AddOpenApi();
 
 // Clean Architecture: Register Infrastructure & Core Dependencies
 builder.Services.AddScoped<ITenantService, TenantService>();
+
+// Supabase Client
+builder.Services.AddScoped(provider =>
+{
+    var supabaseUrl = builder.Configuration["Supabase:Url"];
+    var supabaseKey = builder.Configuration["Supabase:ServiceRoleKey"];
+    return new Supabase.Client(supabaseUrl, supabaseKey);
+});
+
+// File Upload Service
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 // JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "SuperSecretKeyForDevelopmentAndTestingOnly!123";
