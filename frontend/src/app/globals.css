@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #8b5cf6;
-  --color-primary-dark: #7c3aed;
-  --color-secondary: #ec4899;
+  --color-primary: #7c3aed; /* Slightly deeper Violet */
+  --color-primary-dark: #6d28d9;
+  --color-secondary: #db2777; /* Softer Pink */
   --color-accent: #f59e0b;
   --color-background-dark: #0f172a;
   --color-surface-dark: #1e293b;
@@ -15,7 +15,7 @@
 
 @layer base {
   :root {
-    --background: #f8fafc;
+    --background: #f1f5f9; /* Softer Slate 100 */
     --foreground: #0f172a;
     --surface: #ffffff;
     --border: #e2e8f0;
@@ -23,10 +23,10 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --background: #0f172a;
+      --background: #020617; /* Deeper Slate 950 */
       --foreground: #f8fafc;
-      --surface: #1e293b;
-      --border: #334155;
+      --surface: #0f172a;
+      --border: #1e293b;
     }
   }
 

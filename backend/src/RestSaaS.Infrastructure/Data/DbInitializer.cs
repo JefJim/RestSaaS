@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RestSaaS.Core.Entities;
+using BCrypt.Net;
 
 namespace RestSaaS.Infrastructure.Data;
 
@@ -39,6 +40,32 @@ public static class DbInitializer
             };
 
             context.MenuItems.AddRange(items);
+            context.SaveChanges();
+        }
+
+        // Seed Admin User if not exists
+        if (!context.Users.Any(u => u.Email == "admin@tablehive.com"))
+        {
+            var adminUser = new User
+            {
+                Email = "admin@tablehive.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
+                Role = "PlatformAdmin"
+            };
+            context.Users.Add(adminUser);
+            context.SaveChanges();
+
+            // Link Admin to existing restaurants
+            var restaurants = context.Restaurants.ToList();
+            foreach (var restaurant in restaurants)
+            {
+                context.UserRestaurants.Add(new UserRestaurant
+                {
+                    UserId = adminUser.Id,
+                    RestaurantId = restaurant.Id,
+                    AssignedRole = "RestaurantOwner"
+                });
+            }
             context.SaveChanges();
         }
 

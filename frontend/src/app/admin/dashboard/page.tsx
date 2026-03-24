@@ -61,21 +61,29 @@ export default function DashboardPage() {
   const siteUrl = `http://localhost:3000/${data.slug}`;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in-up">
+    <div className="max-w-6xl mx-auto space-y-10 animate-fade-in-up">
       {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-border/50 pb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight mb-2">Hola, {data.name} 👋</h2>
-          <p className="text-foreground/60 text-lg">Aquí está el resumen de tu restaurante el día de hoy.</p>
+          <h2 className="text-4xl font-black tracking-tight mb-2 text-foreground">Hola, {data.name} 👋</h2>
+          <p className="text-foreground/50 text-lg font-medium">Aquí está el resumen de tu restaurante el día de hoy.</p>
         </div>
-        <Link 
-          href={siteUrl}
-          target="_blank"
-          className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full text-sm font-bold hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/30 active:scale-95"
-        >
-          <ExternalLink size={18} />
-          Visitar Website
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link 
+            href={siteUrl}
+            target="_blank"
+            className="flex items-center gap-2 px-6 py-3.5 bg-foreground text-background rounded-2xl text-sm font-bold hover:scale-105 transition-all shadow-xl active:scale-95"
+          >
+            <Eye size={18} />
+            Ver Sitio Público
+          </Link>
+          <Link 
+            href="/admin/dashboard/settings"
+            className="p-3.5 glass dark:glass-dark text-foreground rounded-2xl hover:bg-primary/10 hover:text-primary transition-all border border-border"
+          >
+            <Settings size={20} />
+          </Link>
+        </div>
       </div>
 
       {/* URL Quick Copy */}
