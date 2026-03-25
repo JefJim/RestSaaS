@@ -13,4 +13,7 @@ public class Plan : BaseEntity
     public bool AllowOrders { get; set; }
     public string Features { get; set; } = "[]"; // JSON string of extra features
     public bool IsActive { get; set; } = true;
+    
+    // Stripe Integration
+    public string? StripePriceId { get; set; }
 }

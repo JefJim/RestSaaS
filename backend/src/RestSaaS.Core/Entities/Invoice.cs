@@ -22,5 +22,8 @@ public class Invoice : TenantEntity
     public string? PaymentMethodDetail { get; set; } // e.g. VISA ****8480
     public string? CustomerTaxId { get; set; }
     
+    // Stripe Integration
+    public string? StripeInvoiceId { get; set; }
+    
     public virtual ICollection<InvoiceItem> Items { get; set; } = new List<InvoiceItem>();
 }

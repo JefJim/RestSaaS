@@ -22,13 +22,15 @@ public class BillingController : ControllerBase
     private readonly ITenantService _tenantService;
     private readonly ApplicationDbContext _context;
     private readonly IStripeService _stripeService;
+    private readonly ISubscriptionService _subscriptionService;
 
-    public BillingController(RestSaaS.Core.Interfaces.IBillingService billingService, ITenantService tenantService, ApplicationDbContext context, IStripeService stripeService)
+    public BillingController(RestSaaS.Core.Interfaces.IBillingService billingService, ITenantService tenantService, ApplicationDbContext context, IStripeService stripeService, ISubscriptionService subscriptionService)
     {
         _billingService = billingService;
         _tenantService = tenantService;
         _context = context;
         _stripeService = stripeService;
+        _subscriptionService = subscriptionService;
     }
 
     private Guid GetRestaurantId() => _tenantService.GetCurrentTenantId() 
@@ -169,20 +171,59 @@ public class BillingController : ControllerBase
         return Ok(new { clientSecret });
     }
 
-    [HttpPost("simulate-renewal")]
-    public async Task<IActionResult> SimulateRenewal()
+    [HttpPost("subscriptions")]
+    public async Task<IActionResult> CreateSubscription([FromQuery] Guid planId, [FromQuery] string paymentMethodId)
     {
-        // For testing purposes
-        var restaurantId = GetRestaurantId();
-        var context = HttpContext.RequestServices.GetRequiredService<RestSaaS.Infrastructure.Data.ApplicationDbContext>();
-        var sub = await context.Subscriptions.FirstOrDefaultAsync(s => s.RestaurantId == restaurantId && s.IsActive);
-        
-        if (sub != null)
+        try
         {
-            await _billingService.ProcessSubscriptionRenewalAsync(sub.Id);
-            return Ok(new { message = "Simulación de renovación procesada." });
+            var subscription = await _subscriptionService.CreateSubscriptionAsync(GetRestaurantId(), planId, paymentMethodId, _stripeService);
+            return Ok(subscription);
         }
-        
-        return BadRequest(new { message = "No se encontró suscripción activa." });
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("subscriptions/change-plan")]
+    public async Task<IActionResult> ChangePlan([FromQuery] Guid newPlanId, [FromQuery] string paymentMethodId)
+    {
+        try
+        {
+            var success = await _subscriptionService.ChangePlanAsync(GetRestaurantId(), newPlanId, paymentMethodId, _stripeService);
+            if (success)
+            {
+                return Ok(new { message = "Plan changed successfully" });
+            }
+            else
+            {
+                return BadRequest(new { message = "Failed to change plan" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("subscriptions/cancel")]
+    public async Task<IActionResult> CancelSubscription()
+    {
+        try
+        {
+            var success = await _subscriptionService.CancelSubscriptionAsync(GetRestaurantId(), _stripeService);
+            if (success)
+            {
+                return Ok(new { message = "Subscription cancelled successfully" });
+            }
+            else
+            {
+                return BadRequest(new { message = "Failed to cancel subscription" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

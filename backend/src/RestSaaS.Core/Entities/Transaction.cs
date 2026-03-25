@@ -12,4 +12,7 @@ public class Transaction : TenantEntity
     public string Provider { get; set; } = string.Empty;
     public string ProviderTransactionId { get; set; } = string.Empty;
     public string? Metadata { get; set; } // JSON
+    
+    // Stripe Integration
+    public string? StripePaymentIntentId { get; set; }
 }

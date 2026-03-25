@@ -70,4 +70,92 @@ public class SubscriptionService : ISubscriptionService
 
         return (true, string.Empty);
     }
+
+    public async Task<Subscription> CreateSubscriptionAsync(Guid restaurantId, Guid planId, string paymentMethodId, IStripeService stripeService)
+    {
+        var restaurant = await _context.Restaurants.FindAsync(restaurantId);
+        var plan = await _context.Plans.FindAsync(planId);
+        
+        if (restaurant == null || plan == null)
+            throw new ArgumentException("Restaurant or plan not found");
+
+        // Create or get Stripe customer
+        if (string.IsNullOrEmpty(restaurant.StripeCustomerId))
+        {
+            var billingInfo = await _context.BillingInfos.FirstOrDefaultAsync(b => b.RestaurantId == restaurantId);
+            var email = billingInfo?.Email ?? $"{restaurant.Slug}@tablehive.com";
+            restaurant.StripeCustomerId = await stripeService.CreateCustomerAsync(restaurantId, email, restaurant.Name);
+            await _context.SaveChangesAsync();
+        }
+
+        // Create Stripe subscription
+        var stripePriceId = plan.StripePriceId ?? $"price_{plan.Id.ToString().Replace("-", "")}";
+        var stripeSubscriptionId = await stripeService.CreateSubscriptionAsync(
+            restaurant.StripeCustomerId, 
+            stripePriceId, 
+            paymentMethodId);
+
+        // Create local subscription
+        var subscription = new Subscription
+        {
+            RestaurantId = restaurantId,
+            PlanId = planId,
+            StripeSubscriptionId = stripeSubscriptionId,
+            StartDate = DateTime.UtcNow,
+            NextBillingDate = DateTime.UtcNow.AddMonths(1),
+            IsActive = true,
+            Status = "Active"
+        };
+
+        _context.Subscriptions.Add(subscription);
+        await _context.SaveChangesAsync();
+
+        return subscription;
+    }
+
+    public async Task<bool> ChangePlanAsync(Guid restaurantId, Guid newPlanId, string paymentMethodId, IStripeService stripeService)
+    {
+        var currentSubscription = await _context.Subscriptions
+            .FirstOrDefaultAsync(s => s.RestaurantId == restaurantId && s.IsActive);
+
+        if (currentSubscription == null || string.IsNullOrEmpty(currentSubscription.StripeSubscriptionId))
+            return false;
+
+        var newPlan = await _context.Plans.FindAsync(newPlanId);
+        if (newPlan == null) return false;
+
+        // Update Stripe subscription
+        var newStripePriceId = newPlan.StripePriceId ?? $"price_{newPlan.Id.ToString().Replace("-", "")}";
+        var success = await stripeService.UpdateSubscriptionAsync(currentSubscription.StripeSubscriptionId, newStripePriceId);
+
+        if (success)
+        {
+            // Update local subscription
+            currentSubscription.PlanId = newPlanId;
+            await _context.SaveChangesAsync();
+        }
+
+        return success;
+    }
+
+    public async Task<bool> CancelSubscriptionAsync(Guid restaurantId, IStripeService stripeService)
+    {
+        var subscription = await _context.Subscriptions
+            .FirstOrDefaultAsync(s => s.RestaurantId == restaurantId && s.IsActive);
+
+        if (subscription == null || string.IsNullOrEmpty(subscription.StripeSubscriptionId))
+            return false;
+
+        var success = await stripeService.CancelSubscriptionAsync(subscription.StripeSubscriptionId);
+
+        if (success)
+        {
+            subscription.IsActive = false;
+            subscription.Status = "Cancelled";
+            subscription.EndDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        return success;
+    }
 }

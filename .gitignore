@@ -32,3 +32,7 @@ Thumbs.db
 *.log
 infrastructure/docker/logs.txt
 /tmp/
+
+# AI agent skills and toolchains
+.agents/
+skills/

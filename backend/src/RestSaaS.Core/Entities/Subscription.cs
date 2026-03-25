@@ -10,4 +10,7 @@ public class Subscription : TenantEntity
     public DateTime? NextBillingDate { get; set; }
     public bool IsActive { get; set; } = true;
     public string Status { get; set; } = "Active"; // Active, Canceled, Expired
+    
+    // Stripe Integration
+    public string? StripeSubscriptionId { get; set; }
 }
