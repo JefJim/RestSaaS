@@ -117,12 +117,13 @@ export default function SubscriptionPage() {
       const token = localStorage.getItem("restsaas_token");
       const headers = { "Authorization": `Bearer ${token}` };
 
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const [summaryRes, methodsRes, invoicesRes, infoRes, plansRes] = await Promise.all([
-        fetch("http://localhost:5168/api/billing/summary", { headers }),
-        fetch("http://localhost:5168/api/billing/payment-methods", { headers }),
-        fetch("http://localhost:5168/api/billing/invoices", { headers }),
-        fetch("http://localhost:5168/api/billing/info", { headers }),
-        fetch("http://localhost:5168/api/plans", { headers })
+        fetch(`${apiUrl}/api/billing/summary`, { headers }),
+        fetch(`${apiUrl}/api/billing/payment-methods`, { headers }),
+        fetch(`${apiUrl}/api/billing/invoices`, { headers }),
+        fetch(`${apiUrl}/api/billing/info`, { headers }),
+        fetch(`${apiUrl}/api/plans`, { headers })
       ]);
 
       if (summaryRes.ok) setSummary(await summaryRes.json());
@@ -154,7 +155,7 @@ export default function SubscriptionPage() {
       const last4 = newCard.number.slice(-4);
       const [expMonth, expYear] = newCard.expiry.split("/").map(Number);
       
-      const res = await fetch("http://localhost:5168/api/billing/payment-methods", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/payment-methods`, {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${token}`,
@@ -186,7 +187,7 @@ export default function SubscriptionPage() {
     setSaving(true);
     try {
       const token = localStorage.getItem("restsaas_token");
-      const res = await fetch(`http://localhost:5168/api/subscriptions/change-plan?planId=${planId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/change-plan?planId=${planId}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -207,7 +208,7 @@ export default function SubscriptionPage() {
     setSaving(true);
     try {
       const token = localStorage.getItem("restsaas_token");
-      const res = await fetch("http://localhost:5168/api/billing/info", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/info`, {
         method: "POST",
         headers: { 
           "Authorization": `Bearer ${token}`,
@@ -227,7 +228,7 @@ export default function SubscriptionPage() {
     if (!confirm("¿Estás seguro de eliminar esta forma de pago?")) return;
     try {
       const token = localStorage.getItem("restsaas_token");
-      await fetch(`http://localhost:5168/api/billing/payment-methods/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/payment-methods/${id}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -704,7 +705,7 @@ function AddCardModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: 
 
     try {
       const token = localStorage.getItem("restsaas_token");
-      const res = await fetch("http://localhost:5168/api/billing/stripe-setup-intent", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/stripe-setup-intent`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -798,7 +799,7 @@ function PlanUpgradeModal({ plans, summary, onClose, onSuccess }: { plans: any[]
     if (plan.price === 0) {
        // Manual change for free plan
        const token = localStorage.getItem("restsaas_token");
-       await fetch(`http://localhost:5168/api/subscriptions/change-plan?planId=${plan.id}`, {
+       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/change-plan?planId=${plan.id}`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}` }
        });
@@ -818,7 +819,7 @@ function PlanUpgradeModal({ plans, summary, onClose, onSuccess }: { plans: any[]
 
     try {
       const token = localStorage.getItem("restsaas_token");
-      const res = await fetch(`http://localhost:5168/api/billing/stripe-payment-intent?planId=${selectedPlan.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/stripe-payment-intent?planId=${selectedPlan.id}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -834,7 +835,7 @@ function PlanUpgradeModal({ plans, summary, onClose, onSuccess }: { plans: any[]
       if (result.error) {
         setError(result.error.message || "Pago fallido");
       } else {
-        await fetch(`http://localhost:5168/api/subscriptions/change-plan?planId=${selectedPlan.id}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/change-plan?planId=${selectedPlan.id}`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}` }
         });
