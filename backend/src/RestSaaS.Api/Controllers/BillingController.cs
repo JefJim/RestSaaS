@@ -226,4 +226,64 @@ public class BillingController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPost("create-checkout-session")]
+    public async Task<IActionResult> CreateCheckoutSession([FromBody] CreateCheckoutSessionRequest request)
+    {
+        try
+        {
+            var plan = await _context.Plans.FindAsync(request.PlanId);
+            if (plan == null) return BadRequest(new { message = "Plan not found" });
+
+            var restaurant = await _context.Restaurants.FindAsync(GetRestaurantId());
+            if (restaurant == null) return BadRequest(new { message = "Restaurant not found" });
+
+            // Create or get Stripe customer
+            string customerId;
+            if (string.IsNullOrEmpty(restaurant.StripeCustomerId))
+            {
+                var userEmail = User.FindFirst("email")?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value ?? "user@example.com";
+                customerId = await _stripeService.CreateCustomerAsync(GetRestaurantId(), userEmail, restaurant.Name);
+                restaurant.StripeCustomerId = customerId;
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                customerId = restaurant.StripeCustomerId;
+            }
+
+            // Create checkout session
+            var options = new Stripe.Checkout.SessionCreateOptions
+            {
+                Customer = customerId,
+                PaymentMethodTypes = new List<string> { "card" },
+                LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
+                {
+                    new Stripe.Checkout.SessionLineItemOptions
+                    {
+                        Price = plan.StripePriceId,
+                        Quantity = 1,
+                    },
+                },
+                Mode = "subscription",
+                SuccessUrl = $"{Request.Scheme}://{Request.Host}/admin/dashboard/subscription?success=true",
+                CancelUrl = $"{Request.Scheme}://{Request.Host}/admin/dashboard/subscription?canceled=true",
+                AllowPromotionCodes = true,
+            };
+
+            var service = new Stripe.Checkout.SessionService();
+            var session = await service.CreateAsync(options);
+
+            return Ok(new { url = session.Url });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+}
+
+public class CreateCheckoutSessionRequest
+{
+    public Guid PlanId { get; set; }
 }

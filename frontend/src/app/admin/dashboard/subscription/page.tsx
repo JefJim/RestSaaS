@@ -82,6 +82,19 @@ export default function SubscriptionPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    // Handle Stripe Checkout redirects
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      alert('¡Suscripción creada exitosamente!');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      fetchData(); // Refresh data
+    } else if (urlParams.get('canceled') === 'true') {
+      alert('La suscripción fue cancelada.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
   
   const [summary, setSummary] = useState<BillingSummary | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);

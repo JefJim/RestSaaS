@@ -49,12 +49,19 @@ export const PlanSelection = () => {
     const token = localStorage.getItem("restsaas_token");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5168";
     try {
-      const res = await fetch(`${apiUrl}/api/subscriptions/subscribe/${planId}`, {
+      const res = await fetch(`${apiUrl}/api/billing/create-checkout-session`, {
         method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ planId })
       });
       if (res.ok) {
-        window.location.reload();
+        const data = await res.json();
+        window.location.href = data.url; // Redirect to Stripe Checkout
+      } else {
+        alert("Error al iniciar el proceso de suscripción");
       }
     } catch (err) {
       alert("Error al actualizar suscripción");
