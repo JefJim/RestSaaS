@@ -14,4 +14,5 @@ public interface IBillingService
     Task SetDefaultPaymentMethodAsync(Guid restaurantId, Guid methodId);
     Task<List<Invoice>> GetInvoicesAsync(Guid restaurantId);
     Task ProcessSubscriptionRenewalAsync(Guid subscriptionId);
+    Task<Invoice> GenerateTrialInvoiceAsync(Guid restaurantId, Guid planId);
 }

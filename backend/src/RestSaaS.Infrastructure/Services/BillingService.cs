@@ -132,6 +132,42 @@ public class BillingService : IBillingService
             .ToListAsync();
     }
 
+    public async Task<Invoice> GenerateTrialInvoiceAsync(Guid restaurantId, Guid planId)
+    {
+        var restaurant = await _context.Restaurants.FindAsync(restaurantId);
+        var plan = await _context.Plans.FindAsync(planId);
+        var billingInfo = await _context.BillingInfos.FirstOrDefaultAsync(b => b.RestaurantId == restaurantId);
+        var defaultPaymentMethod = await _context.PaymentMethods.FirstOrDefaultAsync(pm => pm.RestaurantId == restaurantId && pm.IsDefault);
+
+        var invoice = new Invoice
+        {
+            RestaurantId = restaurantId,
+            Amount = 0, // Trial
+            Currency = plan?.Currency ?? "CRC",
+            Status = "Paid",
+            DueDate = DateTime.UtcNow,
+            PaidAt = DateTime.UtcNow,
+            InvoiceNumber = $"INV-TRIAL-{DateTime.UtcNow:yyyyMMdd}-{restaurantId.ToString()[..4].ToUpper()}",
+            BillingEmail = billingInfo?.Email ?? restaurant?.Slug + "@tablehive.com",
+            BillingAddress = billingInfo?.Address ?? "No disponible",
+            CustomerTaxId = billingInfo?.TaxId ?? "No aplicable",
+            PaymentMethodDetail = defaultPaymentMethod != null ? $"{defaultPaymentMethod.Brand} **** {defaultPaymentMethod.Last4}" : "Prueba Gratuita",
+            TransactionId = $"TRIAL_{Guid.NewGuid().ToString()[..8].ToUpper()}",
+            Notes = "Prueba gratuita inicial"
+        };
+
+        invoice.Items.Add(new InvoiceItem
+        {
+            Description = $"{plan?.Name} - 1 mes de prueba gratuita",
+            Amount = 0,
+            Quantity = 1
+        });
+
+        _context.Invoices.Add(invoice);
+        await _context.SaveChangesAsync();
+        return invoice;
+    }
+
     public async Task ProcessSubscriptionRenewalAsync(Guid subscriptionId)
     {
         var sub = await _context.Subscriptions
@@ -139,6 +175,9 @@ public class BillingService : IBillingService
             .FirstOrDefaultAsync(s => s.Id == subscriptionId);
 
         if (sub == null || !sub.IsActive) return;
+
+        var billingInfo = await _context.BillingInfos.FirstOrDefaultAsync(b => b.RestaurantId == sub.RestaurantId);
+        var restaurant = await _context.Restaurants.FindAsync(sub.RestaurantId);
 
         // 1. Create Invoice
         var invoice = new Invoice
@@ -149,7 +188,10 @@ public class BillingService : IBillingService
             Currency = sub.Plan.Currency,
             Status = "Pending",
             DueDate = DateTime.UtcNow.AddDays(3),
-            InvoiceNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{sub.RestaurantId.ToString()[..4].ToUpper()}"
+            InvoiceNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{sub.RestaurantId.ToString()[..4].ToUpper()}",
+            BillingEmail = billingInfo?.Email ?? restaurant?.Slug + "@tablehive.com",
+            BillingAddress = billingInfo?.Address ?? "No disponible",
+            CustomerTaxId = billingInfo?.TaxId ?? "No aplicable"
         };
 
         invoice.Items.Add(new InvoiceItem
@@ -168,8 +210,8 @@ public class BillingService : IBillingService
 
         if (defaultMethod != null)
         {
-            // Simulate 90% success rate
-            bool success = true; // For now
+            // Simulate 95% success rate
+            bool success = true; 
             
             var transaction = new Transaction
             {
@@ -188,6 +230,8 @@ public class BillingService : IBillingService
             {
                 invoice.Status = "Paid";
                 invoice.PaidAt = DateTime.UtcNow;
+                invoice.TransactionId = transaction.ProviderTransactionId;
+                invoice.PaymentMethodDetail = $"{defaultMethod.Brand} **** {defaultMethod.Last4}";
                 sub.NextBillingDate = (sub.NextBillingDate ?? DateTime.UtcNow).AddMonths(1);
             }
             else

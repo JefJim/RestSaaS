@@ -7,6 +7,10 @@ import {
   Building2, User as UserIcon, MapPin, BadgeCheck, Mail, Loader2, AlertCircle, Trash2
 } from "lucide-react";
 import { useTenant } from "@/context/TenantContext";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 type Tab = "resumen" | "compras" | "pagos" | "transacciones" | "fiscal";
 
@@ -61,7 +65,23 @@ export default function SubscriptionPage() {
   const { activeRestaurant } = useTenant();
   const [activeTab, setActiveTab] = useState<Tab>("resumen");
   const [loading, setLoading] = useState(true);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("restsaas_token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const email = payload.email || payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+        if (email) setUserEmail(email);
+      } catch (e) {
+        console.error("Error parsing token", e);
+      }
+    }
+  }, []);
   
   const [summary, setSummary] = useState<BillingSummary | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -108,7 +128,14 @@ export default function SubscriptionPage() {
       if (summaryRes.ok) setSummary(await summaryRes.json());
       if (methodsRes.ok) setPaymentMethods(await methodsRes.json());
       if (invoicesRes.ok) setInvoices(await invoicesRes.json());
-      if (infoRes.ok) setFiscalInfo(await infoRes.json());
+      
+      // Manejar el caso donde no hay info fiscal aún
+      if (infoRes.ok) {
+        setFiscalInfo(await infoRes.json());
+      } else if (infoRes.status === 404) {
+        setFiscalInfo({ legalName: "", taxId: "", address: "", email: "", phone: "" });
+      }
+
       if (plansRes.ok) setPlans(await plansRes.json());
     } catch (error) {
       console.error("Error fetching billing data:", error);
@@ -268,22 +295,24 @@ export default function SubscriptionPage() {
               </div>
 
               {/* Active Plan Card */}
-              <div className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-[2rem] p-8 relative overflow-hidden">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                  <div className="space-y-2">
-                    <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20">Plan Actual</span>
-                    <h3 className="text-3xl font-black text-foreground">{summary?.planName || "Core"}</h3>
-                    <p className="text-sm font-medium text-foreground/60 flex items-center gap-2">
-                      <Clock size={16} className="text-primary" /> 
-                      Próxima renovación: {summary?.nextBillingDate ? new Date(summary.nextBillingDate).toLocaleDateString() : "No programada"}
+              <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 rounded-[2.5rem] p-10 relative overflow-hidden shadow-2xl">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 relative z-10">
+                  <div className="space-y-3">
+                    <span className="px-4 py-1.5 bg-primary text-white rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">Plan Actual</span>
+                    <h3 className="text-4xl font-black text-foreground drop-shadow-sm">{summary?.planName || "Core / Basic"}</h3>
+                    <p className="text-base font-bold text-foreground/70 flex items-center gap-2.5">
+                      <Clock size={20} className="text-primary animate-pulse" /> 
+                      Próxima renovación: <span className="text-foreground font-black">{summary?.nextBillingDate ? new Date(summary.nextBillingDate).toLocaleDateString() : "No programada"}</span>
                     </p>
                   </div>
                   <button onClick={() => setShowPlanModal(true)} 
-                    className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_10px_30px_-10px_rgba(var(--primary-rgb),0.5)] border border-primary/20">
-                    Cambiar Plan
+                    className="group relative px-10 py-5 bg-primary text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:scale-110 active:scale-95 transition-all shadow-[0_15px_40px_-10px_rgba(var(--primary-rgb),0.6)] border-2 border-white/20 overflow-hidden whitespace-nowrap min-w-fit">
+                    <span className="relative z-10">Cambiar Plan</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                   </button>
                 </div>
-                <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-primary/20 rounded-full blur-[80px]"></div>
+                <div className="absolute -top-12 -left-12 w-32 h-32 bg-secondary/20 rounded-full blur-[60px]"></div>
               </div>
 
               {/* Last Transaction */}
@@ -504,72 +533,411 @@ export default function SubscriptionPage() {
         </div>
       </main>
 
-      {/* Modals */}
+      {showInvoiceModal && selectedInvoice && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6 z-[999999] animate-in fade-in duration-300">
+           <div className="bg-white text-black rounded-none p-12 max-w-4xl w-full shadow-2xl relative overflow-y-auto max-h-[90vh] font-sans">
+              <button onClick={() => setShowInvoiceModal(false)} className="absolute top-6 right-6 p-2 hover:bg-black/5 rounded-full transition-colors text-black/40">
+                 <Plus size={24} className="rotate-45" />
+              </button>
+
+              <div className="flex justify-between items-start border-b-4 border-blue-800 pb-8 mb-8">
+                 <div className="space-y-4">
+                    <h2 className="text-3xl font-bold text-blue-800">Factura de TableHive</h2>
+                    <div className="bg-blue-50 p-4 border-l-4 border-blue-800 rounded-r-lg max-w-md">
+                       <p className="text-xs font-bold text-blue-900 uppercase tracking-widest mb-1">Nota importante</p>
+                       <p className="text-[11px] leading-relaxed text-blue-800">
+                         Cuando termine el periodo de prueba gratis el {new Date(new Date(selectedInvoice.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}, pagarás la tarifa del plan seleccionado mensualmente hasta que canceles.
+                       </p>
+                    </div>
+                 </div>
+                 <div className="text-right">
+                    <div className="text-4xl font-black italic text-blue-900 mb-2">TableHive</div>
+                    <p className="text-xs text-black/60">San José, Costa Rica</p>
+                    <p className="text-xs text-black/60">VAT: CR-2025-TABLEHIVE</p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-12 mb-10">
+                 <div className="space-y-4">
+                    <div>
+                       <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Facturado a</p>
+                       <p className="font-bold text-lg">{fiscalInfo.legalName || activeRestaurant?.name}</p>
+                       <p className="text-sm text-black/70">{fiscalInfo.address || "Costa Rica"}</p>
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">ID Fiscal del Cliente</p>
+                       <p className="text-sm font-bold">{selectedInvoice.customerTaxId || "No aplicable"}</p>
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-4">
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Fecha efectiva</p>
+                          <p className="font-bold">{new Date(selectedInvoice.createdAt).toLocaleDateString()}</p>
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Número de factura</p>
+                          <p className="font-bold">{selectedInvoice.invoiceNumber}</p>
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Forma de pago</p>
+                          <p className="font-bold uppercase">{selectedInvoice.paymentMethodDetail || "Prueba Gratuita"}</p>
+                       </div>
+                    </div>
+                    <div className="space-y-4">
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">ID Transacción</p>
+                          <p className="font-bold">{selectedInvoice.transactionId || "N/A"}</p>
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Frecuencia</p>
+                          <p className="font-bold">Mensual</p>
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Comprador</p>
+                          <p className="font-bold text-blue-700 truncate">{selectedInvoice.billingEmail || userEmail || "jefryjimenez2011@gmail.com"}</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="mb-10">
+                 <table className="w-full text-left border-collapse">
+                    <thead>
+                       <tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest">
+                          <th className="py-3 px-4">Artículo</th>
+                          <th className="py-3 px-4">Descripción</th>
+                          <th className="py-3 px-4 text-right">Tarifa</th>
+                          <th className="py-3 px-4 text-center">Cant.</th>
+                          <th className="py-3 px-4 text-right">Precio</th>
+                       </tr>
+                    </thead>
+                    <tbody className="text-sm">
+                       {selectedInvoice.items && selectedInvoice.items.length > 0 ? selectedInvoice.items.map((item: any, idx: number) => (
+                          <tr key={idx} className="border-b border-black/5">
+                             <td className="py-4 px-4 font-bold">{idx + 1}</td>
+                             <td className="py-4 px-4">
+                               <p className="font-bold">{item.description}</p>
+                               <p className="text-xs text-black/40">Del {new Date(selectedInvoice.createdAt).toLocaleDateString()} al {new Date(new Date(selectedInvoice.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
+                             </td>
+                             <td className="py-4 px-4 text-right">{item.amount.toLocaleString()} {selectedInvoice.currency}</td>
+                             <td className="py-4 px-4 text-center">{item.quantity}</td>
+                             <td className="py-4 px-4 text-right font-bold">{(item.amount * item.quantity).toLocaleString()} {selectedInvoice.currency}</td>
+                          </tr>
+                       )) : (
+                          <tr className="border-b border-black/5">
+                             <td className="py-4 px-4 font-bold">1</td>
+                             <td className="py-4 px-4">Suscripción Manual - Período Inicial</td>
+                             <td className="py-4 px-4 text-right">{selectedInvoice.amount.toLocaleString()} {selectedInvoice.currency}</td>
+                             <td className="py-4 px-4 text-center">1</td>
+                             <td className="py-4 px-4 text-right font-bold">{selectedInvoice.amount.toLocaleString()} {selectedInvoice.currency}</td>
+                          </tr>
+                       )}
+                    </tbody>
+                 </table>
+              </div>
+
+              <div className="flex justify-end mb-12">
+                 <div className="w-64 space-y-4">
+                    <div className="flex justify-between items-center text-sm font-bold text-black/60">
+                       <span>Subtotal :</span>
+                       <span>{selectedInvoice.amount.toLocaleString()} {selectedInvoice.currency}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-bold text-black/60">
+                       <span>Impuesto (0%) :</span>
+                       <span>0 {selectedInvoice.currency}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xl font-black border-t-2 border-black pt-4">
+                       <span>Total :</span>
+                       <span>{selectedInvoice.amount.toLocaleString()} {selectedInvoice.currency}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-bold text-green-600">
+                       <span>Pago recibido :</span>
+                       <span>{selectedInvoice.amount.toLocaleString()} {selectedInvoice.currency}</span>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="border-t border-black/10 pt-8 text-[11px] text-black/50 leading-relaxed text-center italic">
+                 ¿Tienes dudas o necesitas ayuda? Visita nuestro Centro de ayuda o contacta a soporte@tablehive.com
+               </div>
+            </div>
+         </div>
+      )}
+
       {showPlanModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
-          <div className="bg-background rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-border/40 animate-scale-in">
-            <h2 className="text-3xl font-black mb-6">Elige tu Plan</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Elements stripe={stripePromise}>
+           <PlanUpgradeModal 
+             plans={plans} 
+             summary={summary}
+             onClose={() => setShowPlanModal(false)} 
+             onSuccess={() => { fetchData(); setShowPlanModal(false); }}
+           />
+        </Elements>
+      )}
+      {showCardModal && (
+        <Elements stripe={stripePromise}>
+           <AddCardModal 
+             onClose={() => setShowCardModal(false)} 
+             onSuccess={() => { fetchData(); setShowCardModal(false); }}
+           />
+        </Elements>
+      )}
+    </div>
+  );
+}
+
+// --- Stripe Components ---
+
+function AddCardModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("restsaas_token");
+      const res = await fetch("http://localhost:5168/api/billing/stripe-setup-intent", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const clientSecret = data.clientSecret;
+
+      const result = await stripe.confirmSetup({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/admin/dashboard/subscription",
+        },
+        redirect: "if_required"
+      });
+
+      if (result.error) {
+        setError(result.error.message || "Error al procesar la tarjeta");
+      } else {
+        onSuccess();
+      }
+    } catch (err) {
+      setError("Error de conexión con el servidor");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-6 z-[999999] animate-in fade-in duration-300 font-sans">
+      <div className="bg-background rounded-[3rem] p-10 max-w-md w-full shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-border/60 relative overflow-hidden">
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-foreground/5 rounded-full transition-colors text-foreground/40">
+          <Plus size={24} className="rotate-45" />
+        </button>
+        
+        <div className="flex items-center gap-4 mb-8">
+           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-xl shadow-primary/20">
+              <CreditCard size={32} />
+           </div>
+           <div>
+              <h2 className="text-2xl font-black">Nueva Tarjeta</h2>
+              <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Pago seguro encriptado</p>
+           </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="p-4 bg-foreground/5 rounded-2xl border border-border/40">
+            <CardElement options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#ffffff',
+                  '::placeholder': { color: '#aab7c4' },
+                },
+                invalid: { color: '#ef4444' },
+              },
+            }} />
+          </div>
+
+          {error && (
+            <div className="text-red-500 text-[11px] font-bold flex items-center gap-2 bg-red-500/10 p-4 rounded-2xl border border-red-500/20">
+               <AlertCircle size={16} /> {error}
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            disabled={!stripe || processing}
+            className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-primary/40 disabled:opacity-50 flex items-center justify-center gap-3"
+          >
+            {processing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
+            {processing ? "PROCESANDO..." : "GUARDAR TARJETA SEGURA"}
+          </button>
+          
+          <div className="flex items-center justify-center gap-4 pt-4 border-t border-border/40 opacity-40">
+             <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1"><ShieldCheck size={12} className="text-green-500" /> SSL 256-bit</span>
+             <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1"><ShieldCheck size={12} className="text-green-500" /> PCI Compliance</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function PlanUpgradeModal({ plans, summary, onClose, onSuccess }: { plans: any[], summary: any, onClose: () => void, onSuccess: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [step, setStep] = useState<"select" | "payment">("select");
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUpgrade = async (plan: any) => {
+    if (plan.price === 0) {
+       // Manual change for free plan
+       const token = localStorage.getItem("restsaas_token");
+       await fetch(`http://localhost:5168/api/subscriptions/change-plan?planId=${plan.id}`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` }
+       });
+       onSuccess();
+       return;
+    }
+    setSelectedPlan(plan);
+    setStep("payment");
+  };
+
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements || !selectedPlan) return;
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("restsaas_token");
+      const res = await fetch(`http://localhost:5168/api/billing/stripe-payment-intent?planId=${selectedPlan.id}`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const clientSecret = data.clientSecret;
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+        }
+      });
+
+      if (result.error) {
+        setError(result.error.message || "Pago fallido");
+      } else {
+        await fetch(`http://localhost:5168/api/subscriptions/change-plan?planId=${selectedPlan.id}`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        onSuccess();
+      }
+    } catch (err) {
+      setError("Error en la transacción");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-6 z-[99999] animate-in fade-in duration-300 font-sans text-foreground">
+      <div className="bg-background rounded-[3rem] p-10 max-w-4xl w-full shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-border/60 relative overflow-hidden">
+        <button onClick={onClose} className="absolute top-6 right-6 p-3 hover:bg-foreground/5 rounded-full transition-colors text-foreground/40 hover:text-foreground">
+           <Plus size={32} className="rotate-45" />
+        </button>
+
+        {step === "select" ? (
+          <>
+            <div className="mb-10">
+              <h2 className="text-4xl font-black mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent italic">Mejora tu Plan</h2>
+              <p className="text-foreground/50 font-bold uppercase tracking-widest text-xs">Escala tu restaurante al siguiente nivel</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {plans.map(p => (
-                <div key={p.id} className={`p-6 rounded-2xl border-2 transition-all cursor-pointer ${summary?.planName === p.name ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
-                  onClick={() => handleUpdatePlan(p.id)}>
-                   <h3 className="font-black text-lg mb-1">{p.name}</h3>
-                   <p className="text-2xl font-black text-primary mb-4">${p.price}<span className="text-xs font-bold text-foreground/40">/mes</span></p>
-                   <ul className="text-[10px] font-bold text-foreground/60 space-y-2 uppercase tracking-wider">
-                      <li>• {p.name === 'Free' ? '20' : 'Ilimitados'} Platillos</li>
-                      <li>• {p.name === 'Free' ? '1' : 'Multisucursal'}</li>
-                   </ul>
+                <div key={p.id} className={`group p-8 rounded-[2.5rem] border-2 transition-all cursor-pointer relative overflow-hidden ${
+                  summary?.planName === p.name ? 'border-primary bg-primary/5 ring-4 ring-primary/10 select-none pointer-events-none' : 'border-border/60 hover:border-primary/40 hover:bg-primary/5 hover:scale-[1.05]'
+                }`}
+                  onClick={() => handleUpgrade(p)}>
+                   <div className="relative z-10">
+                      <h3 className="font-black text-xl mb-2">{p.name}</h3>
+                      <div className="flex items-baseline gap-1 mb-6">
+                         <span className="text-3xl font-black text-primary italic uppercase">{p.price.toLocaleString()}</span>
+                         <span className="text-xs font-bold text-foreground/40 uppercase tracking-widest">{p.currency}/mes</span>
+                      </div>
+                      <div className="space-y-4 pt-4 border-t border-border/40">
+                         {p.features ? JSON.parse(p.features).slice(0, 4).map((f: string, i: number) => (
+                           <div key={i} className="flex items-center gap-2 text-[11px] font-bold text-foreground/60 uppercase tracking-wide">
+                              <CheckCircle2 size={14} className="text-green-500" /> {f}
+                           </div>
+                         )) : (
+                           <p className="text-[10px] italic opacity-40">CARACTERÍSTICAS INCLUIDAS</p>
+                         )}
+                      </div>
+                      <button className={`w-full mt-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+                        summary?.planName === p.name ? 'bg-primary text-white' : 'bg-foreground/5 text-foreground/60 group-hover:bg-primary group-hover:text-white shadow-xl group-hover:shadow-primary/20'
+                      }`}>
+                        {summary?.planName === p.name ? 'Tu Plan Actual' : 'Seleccionar'}
+                      </button>
+                   </div>
                 </div>
               ))}
             </div>
-            <button onClick={() => setShowPlanModal(false)} className="mt-8 w-full py-4 text-xs font-black uppercase tracking-widest text-foreground/40 hover:text-foreground">Cerrar</button>
-          </div>
-        </div>
-      )}
+            <p className="mt-8 text-center text-[10px] font-bold text-foreground/30 uppercase tracking-[0.2em] italic">Seguridad garantizada por Stripe • Cancela en cualquier momento</p>
+          </>
+        ) : (
+          <div className="max-w-md mx-auto py-10 text-center">
+             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <ShieldCheck size={40} className="text-primary" />
+             </div>
+             <h2 className="text-3xl font-black mb-2">Finalizar Pago</h2>
+             <p className="text-foreground/60 font-bold mb-10 text-sm uppercase tracking-wider">
+               Plan {selectedPlan.name} • {selectedPlan.price.toLocaleString()} {selectedPlan.currency}
+             </p>
+             
+             <form onSubmit={handlePayment} className="space-y-6 text-left">
+                <div className="p-5 bg-foreground/5 rounded-[2rem] border-2 border-border/40 focus-within:border-primary/50 transition-all shadow-inner">
+                  <CardElement options={{
+                    style: {
+                      base: {
+                        fontSize: '16px',
+                        color: '#ffffff',
+                        fontFamily: 'system-ui, sans-serif',
+                        '::placeholder': { color: '#aab7c4' },
+                      },
+                    },
+                  }} />
+                </div>
 
-      {showCardModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
-          <div className="bg-background rounded-3xl p-8 max-w-md w-full shadow-2xl border border-border/40 animate-scale-in">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-inner"><Plus size={24} /></div>
-              <h2 className="text-2xl font-black">Nueva Tarjeta</h2>
-            </div>
-            <form onSubmit={handleAddCard} className="space-y-4">
-               <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Número de Tarjeta</label>
-                  <input type="text" placeholder="XXXX XXXX XXXX XXXX" className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                    required value={newCard.number} onChange={e => setNewCard({...newCard, number: e.target.value})} maxLength={16} />
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                     <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Expiración</label>
-                     <input type="text" placeholder="MM/YY" className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                       required value={newCard.expiry} onChange={e => setNewCard({...newCard, expiry: e.target.value})} maxLength={5} />
+                {error && (
+                  <div className="text-red-500 text-xs font-black bg-red-500/10 p-4 rounded-2xl border border-red-500/20 uppercase tracking-tight italic">
+                    {error}
                   </div>
-                  <div>
-                     <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">CVC</label>
-                     <input type="password" placeholder="***" className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                       required value={newCard.cvc} onChange={e => setNewCard({...newCard, cvc: e.target.value})} maxLength={3} />
-                  </div>
-               </div>
-               <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Nombre en Tarjeta</label>
-                  <input type="text" placeholder="Nombre completo" className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                    required value={newCard.name} onChange={e => setNewCard({...newCard, name: e.target.value})} />
-               </div>
-               <div className="pt-4 flex gap-3">
-                  <button type="button" onClick={() => setShowCardModal(false)} className="flex-1 py-4 font-black text-xs uppercase tracking-widest border border-border rounded-2xl hover:bg-foreground/5">Cancelar</button>
-                  <button type="submit" disabled={saving} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
-                    {saving ? <Loader2 size={16} className="animate-spin" /> : "Guardar"}
-                  </button>
-               </div>
-               <p className="text-[9px] text-foreground/40 font-bold uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
-                  <ShieldCheck size={12} className="text-green-500" /> PCI-DSS Compliant • Encriptado 256-bit
-               </p>
-            </form>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={!stripe || processing}
+                  className="w-full py-5 bg-primary text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-primary/40 disabled:opacity-50 flex items-center justify-center gap-3 italic"
+                >
+                  {processing ? <Loader2 className="animate-spin" size={20} /> : <BadgeCheck size={20} />}
+                  {processing ? "PROCESANDO..." : `CONFIRMAR Y PAGAR`}
+                </button>
+                <button type="button" onClick={() => setStep("select")} className="w-full text-[10px] font-black uppercase text-foreground/30 tracking-widest hover:text-foreground transition-colors pt-2">
+                   ← Volver a selección de planes
+                </button>
+             </form>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

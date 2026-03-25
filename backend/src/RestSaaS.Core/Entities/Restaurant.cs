@@ -11,6 +11,7 @@ public class Restaurant : BaseEntity
     public double? Longitude { get; set; }
     public string? PrimaryColor { get; set; }
     public Guid OwnerUserId { get; set; }
+    public string? StripeCustomerId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     // Navigation properties

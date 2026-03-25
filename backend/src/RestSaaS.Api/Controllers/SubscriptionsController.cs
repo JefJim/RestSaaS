@@ -8,17 +8,19 @@ using RestSaaS.Core.Entities;
 using RestSaaS.Core.Interfaces;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/subscriptions")]
 [Authorize]
 public class SubscriptionsController : ControllerBase
 {
+    private readonly RestSaaS.Core.Interfaces.IBillingService _billingService;
     private readonly ApplicationDbContext _context;
-    private readonly ITenantService _tenantService;
+    private readonly RestSaaS.Core.Interfaces.ITenantService _tenantService;
 
-    public SubscriptionsController(ApplicationDbContext context, ITenantService tenantService)
+    public SubscriptionsController(ApplicationDbContext context, RestSaaS.Core.Interfaces.ITenantService tenantService, RestSaaS.Core.Interfaces.IBillingService billingService)
     {
         _context = context;
         _tenantService = tenantService;
+        _billingService = billingService;
     }
 
     [HttpGet("me")]
@@ -38,11 +40,18 @@ public class SubscriptionsController : ControllerBase
         return Ok(subscription);
     }
 
+    [HttpGet("test")]
+    public IActionResult TestRoute() => Ok(new { message = "Subscriptions controller is reachable!" });
+
     [HttpPost("change-plan")]
     public async Task<IActionResult> ChangePlan([FromQuery] Guid planId)
     {
         var plan = await _context.Plans.FindAsync(planId);
-        if (plan == null) return NotFound("Plan no encontrado.");
+        if (plan == null) return BadRequest(new { 
+            message = "Plan no encontrado.", 
+            receivedId = planId, 
+            tip = "Asegúrate de haber ejecutado las migraciones y el seeder (DbInitializer.cs)." 
+        });
 
         var restaurantId = _tenantService.GetCurrentTenantId();
         if (!restaurantId.HasValue) return Unauthorized();
@@ -71,6 +80,9 @@ public class SubscriptionsController : ControllerBase
 
         _context.Subscriptions.Add(newSubscription);
         await _context.SaveChangesAsync();
+
+        // Generate the initial "Trial" invoice for history
+        await _billingService.GenerateTrialInvoiceAsync(restaurantId.Value, planId);
 
         return Ok(newSubscription);
     }

@@ -7,6 +7,7 @@ using RestSaaS.Api.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,9 +25,13 @@ builder.Services.AddCors(options =>
 });
 
 // Clean Architecture: Register Infrastructure & Core Dependencies
-builder.Services.AddScoped<ITenantService, TenantService>();
-builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
-builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<RestSaaS.Core.Interfaces.ITenantService, RestSaaS.Infrastructure.Tenancy.TenantService>();
+builder.Services.AddScoped<RestSaaS.Core.Interfaces.IBillingService, RestSaaS.Infrastructure.Services.BillingService>();
+builder.Services.AddScoped<RestSaaS.Core.Interfaces.ISubscriptionService, RestSaaS.Infrastructure.Services.SubscriptionService>();
+builder.Services.AddScoped<RestSaaS.Core.Interfaces.IStripeService, RestSaaS.Infrastructure.Services.StripeService>();
+
+// Initialize Stripe
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 // Supabase Client
 builder.Services.AddScoped(provider =>
