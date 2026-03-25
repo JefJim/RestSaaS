@@ -26,20 +26,43 @@ public static class DbInitializer
             context.Restaurants.AddRange(initialRestaurants);
             context.SaveChanges();
 
+            // Seed Branches for Pizza Luna
+            var newPizzaLuna = initialRestaurants[0];
+            var principalBranch = new Branch 
+            { 
+                RestaurantId = newPizzaLuna.Id, 
+                Name = "Principal", 
+                Address = "Sede Central", 
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow 
+            };
+            context.Branches.Add(principalBranch);
+
+            var sushiBranch = new Branch 
+            { 
+                RestaurantId = initialRestaurants[1].Id, 
+                Name = "Principal", 
+                Address = "Sede Central", 
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow 
+            };
+            context.Branches.Add(sushiBranch);
+            
+            context.SaveChanges();
+
             // Add some initial menu for the first restaurant
-            var firstRestaurant = initialRestaurants[0];
-            var menu = new Menu { RestaurantId = firstRestaurant.Id, Name = "Main Menu", IsActive = true };
+            var menu = new Menu { RestaurantId = newPizzaLuna.Id, BranchId = principalBranch.Id, Name = "Main Menu", IsActive = true };
             context.Menus.Add(menu);
             context.SaveChanges();
 
-            var category = new MenuCategory { RestaurantId = firstRestaurant.Id, MenuId = menu.Id, Name = "Pizzas", DisplayOrder = 1 };
+            var category = new MenuCategory { RestaurantId = newPizzaLuna.Id, BranchId = principalBranch.Id, MenuId = menu.Id, Name = "Pizzas", DisplayOrder = 1 };
             context.MenuCategories.Add(category);
             context.SaveChanges();
 
             var items = new MenuItem[]
             {
-                new MenuItem { RestaurantId = firstRestaurant.Id, CategoryId = category.Id, Name = "Margherita", Description = "Fresh mozzarella, basil and tomato sauce", Price = 12.99m, IsAvailable = true },
-                new MenuItem { RestaurantId = firstRestaurant.Id, CategoryId = category.Id, Name = "Pepperoni", Description = "Classic pepperoni with mozzarella", Price = 14.99m, IsAvailable = true }
+                new MenuItem { RestaurantId = newPizzaLuna.Id, BranchId = principalBranch.Id, CategoryId = category.Id, Name = "Margherita", Description = "Fresh mozzarella, basil and tomato sauce", BasePrice = 12.99m, IsAvailable = true },
+                new MenuItem { RestaurantId = newPizzaLuna.Id, BranchId = principalBranch.Id, CategoryId = category.Id, Name = "Pepperoni", Description = "Classic pepperoni with mozzarella", BasePrice = 14.99m, IsAvailable = true }
             };
 
             context.MenuItems.AddRange(items);
@@ -135,12 +158,15 @@ public static class DbInitializer
             context.SaveChanges();
         }
 
-        // 🎁 Seed Tiers (Phase 1.2.2/1.2.3 Refinement)
+        // 🎁 Seed Tiers
         var requiredPlans = new List<Plan>
         {
-            new Plan { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Core / Basic", Price = 25000, Currency = "CRC", MaxMenuItems = 50, MaxUsers = 1, Features = "[\"Menú Digital\", \"QR Code\", \"WhatsApp Contact\"]" },
-            new Plan { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Pro Tier", Price = 40000, Currency = "CRC", MaxMenuItems = 200, MaxUsers = 5, Features = "[\"Todo lo de Basic\", \"Imágenes\", \"Reservaciones\", \"Temas\"]" },
-            new Plan { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Premium", Price = 60000, Currency = "CRC", MaxMenuItems = 1000, MaxUsers = 20, Features = "[\"Todo lo de Pro\", \"Dominio Propio\", \"Pedidos Online\", \"Analytics\", \"Soporte 24/7\"]" }
+            // Core: 1 branch, 50 items, no branch/menu images (only restaurant logo on public page), reservations, basic website
+            new Plan { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Core / Basic", Price = 25000, Currency = "CRC", MaxMenuItems = 50, MaxBranches = 1, MaxStaffUsers = 2, AllowImages = false, AllowReservations = true, AllowOrders = false, Features = "[\"1 Restaurante\", \"1 Sucursal\", \"50 Platillos\", \"Logo en p\u00e1gina p\u00fablica\", \"Reservaciones\", \"Sitio Web b\u00e1sico\"]" },
+            // Pro: up to 5 branches, 200 items, images allowed, staff users, analytics
+            new Plan { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Pro Tier", Price = 40000, Currency = "CRC", MaxMenuItems = 200, MaxBranches = 5, MaxStaffUsers = 10, AllowImages = true, AllowReservations = true, AllowOrders = false, Features = "[\"1 Restaurante\", \"Hasta 5 Sucursales\", \"200 Platillos\", \"Im\u00e1genes en men\u00fa y sucursales\", \"Reservaciones\", \"Personal\", \"Analytics\"]" },
+            // Premium: unlimited branches/items, online orders, custom domain, reports
+            new Plan { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Premium", Price = 60000, Currency = "CRC", MaxMenuItems = 9999, MaxBranches = 9999, MaxStaffUsers = 9999, AllowImages = true, AllowReservations = true, AllowOrders = true, Features = "[\"1 Restaurante\", \"Sucursales Ilimitadas\", \"Platillos Ilimitados\", \"Im\u00e1genes\", \"Pedidos Online\", \"Dominio Propio\", \"Analytics\", \"Reportes\"]" }
         };
 
         foreach (var p in requiredPlans)
@@ -157,7 +183,11 @@ public static class DbInitializer
                 existing.Price = p.Price;
                 existing.IsActive = true;
                 existing.MaxMenuItems = p.MaxMenuItems;
-                existing.MaxUsers = p.MaxUsers;
+                existing.MaxBranches = p.MaxBranches;
+                existing.MaxStaffUsers = p.MaxStaffUsers;
+                existing.AllowImages = p.AllowImages;
+                existing.AllowReservations = p.AllowReservations;
+                existing.AllowOrders = p.AllowOrders;
             }
         }
         context.SaveChanges();

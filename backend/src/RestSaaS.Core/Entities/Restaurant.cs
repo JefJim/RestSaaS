@@ -15,6 +15,12 @@ public class Restaurant : BaseEntity
     
     // Navigation properties
     public virtual ICollection<UserRestaurant> UserRestaurants { get; set; } = new List<UserRestaurant>();
+    public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
     public virtual Settings? Settings { get; set; }
     public virtual ICollection<OpeningHours> OpeningHours { get; set; } = new List<OpeningHours>();
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    public virtual BillingInfo? BillingInfo { get; set; }
+    public virtual ICollection<PaymentMethod> PaymentMethods { get; set; } = new List<PaymentMethod>();
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

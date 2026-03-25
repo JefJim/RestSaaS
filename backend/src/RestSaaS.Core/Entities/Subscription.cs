@@ -7,6 +7,7 @@ public class Subscription : TenantEntity
     
     public DateTime StartDate { get; set; } = DateTime.UtcNow;
     public DateTime? EndDate { get; set; }
+    public DateTime? NextBillingDate { get; set; }
     public bool IsActive { get; set; } = true;
     public string Status { get; set; } = "Active"; // Active, Canceled, Expired
 }

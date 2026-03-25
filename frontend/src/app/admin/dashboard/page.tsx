@@ -160,8 +160,8 @@ export default function DashboardPage() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
             <h3 className="text-xl font-extrabold mb-6 tracking-tight">Acciones Rápidas</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Link href="/admin/dashboard/menu/add" className="p-4 bg-foreground/5 rounded-2xl border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-center">
-                <p className="font-bold text-sm">Crear Platillo</p>
+              <Link href="/admin/dashboard/staff" className="p-4 bg-foreground/5 rounded-2xl border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-center">
+                <p className="font-bold text-sm">Agregar Staff</p>
               </Link>
               <Link href="/admin/dashboard/menu" className="p-4 bg-foreground/5 rounded-2xl border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-center">
                 <p className="font-bold text-sm">Gestionar Menú</p>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 <p className="text-[10px] text-foreground/30 uppercase font-black tracking-widest mt-4">Próximo vencimiento: {new Date(stats.subscription.endDate).toLocaleDateString()}</p>
               )}
             </div>
-            <Link href="/admin/dashboard/billing" className="mt-8 px-6 py-4 bg-primary text-white text-center rounded-2xl font-black tracking-tight hover:scale-105 transition-all shadow-xl shadow-primary/20">
+            <Link href="/admin/dashboard/subscription" className="mt-8 px-6 py-4 bg-primary text-white text-center rounded-2xl font-black tracking-tight hover:scale-105 transition-all shadow-xl shadow-primary/20">
               Gestionar Plan
             </Link>
           </div>

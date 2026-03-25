@@ -34,7 +34,7 @@ export const LoginForm = () => {
       if (data.onboardingCompleted === false) {
         window.location.href = "/onboarding";
       } else {
-        window.location.href = "/admin/dashboard"; 
+        window.location.href = "/select-restaurant"; 
       }
     } catch (err: any) {
       setError(err.message);

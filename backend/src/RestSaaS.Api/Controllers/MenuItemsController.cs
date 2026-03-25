@@ -20,12 +20,14 @@ public class MenuItemsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ITenantService _tenantService;
     private readonly IFileUploadService _fileUploadService;
+    private readonly ISubscriptionService _subscriptionService;
 
-    public MenuItemsController(ApplicationDbContext context, ITenantService tenantService, IFileUploadService fileUploadService)
+    public MenuItemsController(ApplicationDbContext context, ITenantService tenantService, IFileUploadService fileUploadService, ISubscriptionService subscriptionService)
     {
         _context = context;
         _tenantService = tenantService;
         _fileUploadService = fileUploadService;
+        _subscriptionService = subscriptionService;
     }
 
     [HttpGet]
@@ -47,6 +49,16 @@ public class MenuItemsController : ControllerBase
         var tenantId = _tenantService.GetCurrentTenantId();
         if (!tenantId.HasValue) return Unauthorized();
 
+        // Check Subscription Limits
+        var (allowed, message) = await _subscriptionService.ValidateLimitAsync(tenantId.Value, "menuitem");
+        if (!allowed) return BadRequest(new { Message = message });
+
+        if (dto.ImageFile != null)
+        {
+            var (imgAllowed, imgMsg) = await _subscriptionService.ValidateLimitAsync(tenantId.Value, "images");
+            if (!imgAllowed) return BadRequest(new { Message = imgMsg });
+        }
+
         string? imageUrl = null;
         if (dto.ImageFile != null)
         {
@@ -60,7 +72,7 @@ public class MenuItemsController : ControllerBase
             CategoryId = dto.CategoryId,
             Name = dto.Name,
             Description = dto.Description ?? string.Empty,
-            Price = dto.Price,
+            BasePrice = dto.BasePrice,
             ImageUrl = imageUrl ?? string.Empty,
             IsAvailable = dto.IsAvailable
         };
@@ -88,7 +100,7 @@ public class MenuItemsController : ControllerBase
 
         item.Name = dto.Name;
         item.Description = dto.Description ?? string.Empty;
-        item.Price = dto.Price;
+        item.BasePrice = dto.BasePrice;
         item.IsAvailable = dto.IsAvailable;
         item.CategoryId = dto.CategoryId;
 
@@ -117,7 +129,7 @@ public class CreateMenuItemRequest
     public Guid CategoryId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public decimal Price { get; set; }
+    public decimal BasePrice { get; set; }
     public IFormFile? ImageFile { get; set; }
     public bool IsAvailable { get; set; } = true;
 }

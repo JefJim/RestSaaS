@@ -24,8 +24,12 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentSubscription()
     {
+        var tenantId = _tenantService.GetCurrentTenantId();
+        if (!tenantId.HasValue) return NotFound("No tenant context.");
+
         var subscription = await _context.Subscriptions
             .Include(s => s.Plan)
+            .Where(s => s.RestaurantId == tenantId.Value)
             .OrderByDescending(s => s.StartDate)
             .FirstOrDefaultAsync();
 
@@ -34,32 +38,33 @@ public class SubscriptionsController : ControllerBase
         return Ok(subscription);
     }
 
-    [HttpPost("subscribe/{planId}")]
-    public async Task<IActionResult> UpdateSubscription(Guid planId)
+    [HttpPost("change-plan")]
+    public async Task<IActionResult> ChangePlan([FromQuery] Guid planId)
     {
         var plan = await _context.Plans.FindAsync(planId);
         if (plan == null) return NotFound("Plan no encontrado.");
 
-        var tenantId = _tenantService.GetCurrentTenantId();
-        if (!tenantId.HasValue) return Unauthorized();
+        var restaurantId = _tenantService.GetCurrentTenantId();
+        if (!restaurantId.HasValue) return Unauthorized();
 
         // Deactivate previous subscriptions
         var activeSubscriptions = await _context.Subscriptions
-            .Where(s => s.IsActive)
+            .Where(s => s.RestaurantId == restaurantId.Value && s.IsActive)
             .ToListAsync();
             
         foreach(var sub in activeSubscriptions)
         {
             sub.IsActive = false;
-            sub.Status = "Canceled";
+            sub.Status = "Upgraded";
             sub.EndDate = DateTime.UtcNow;
         }
 
         var newSubscription = new Subscription
         {
-            RestaurantId = tenantId.Value,
+            RestaurantId = restaurantId.Value,
             PlanId = planId,
             StartDate = DateTime.UtcNow,
+            NextBillingDate = DateTime.UtcNow.AddMonths(1),
             IsActive = true,
             Status = "Active"
         };

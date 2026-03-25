@@ -56,37 +56,52 @@ public class OnboardingController : ControllerBase
             OwnerUserId = user.Id
         };
         _context.Restaurants.Add(restaurant);
+        await _context.SaveChangesAsync(); // Save to get restaurant.Id
 
-        // 3. Create Settings
+        // 3. Create Default Branch
+        var branch = new Branch
+        {
+            Name = "Principal",
+            RestaurantId = restaurant.Id,
+            Address = request.Address ?? string.Empty,
+            Phone = request.Phone ?? string.Empty,
+            IsActive = true
+        };
+        _context.Branches.Add(branch);
+
+        // 4. Create Settings
         var settings = new Settings
         {
             RestaurantId = restaurant.Id,
+            BranchId = branch.Id,
             ContactPhone = request.Phone ?? string.Empty,
             Address = request.Address ?? string.Empty,
             ContactEmail = user.Email
         };
         _context.Settings.Add(settings);
 
-        // 4. Create Menu
+        // 5. Create Menu
         var menu = new Menu
         {
             Name = "Carta Principal",
             RestaurantId = restaurant.Id,
+            BranchId = branch.Id,
             IsActive = true
         };
         _context.Menus.Add(menu);
 
-        // 5. Create Default Category
+        // 6. Create Default Category
         var category = new MenuCategory
         {
             Name = "General",
             Menu = menu,
             RestaurantId = restaurant.Id,
+            BranchId = branch.Id,
             DisplayOrder = 0
         };
         _context.MenuCategories.Add(category);
 
-        // 6. Link User to Restaurant
+        // 7. Link User to Restaurant
         var userRestaurant = new UserRestaurant
         {
             UserId = userId,
@@ -95,7 +110,7 @@ public class OnboardingController : ControllerBase
         };
         _context.UserRestaurants.Add(userRestaurant);
 
-        // 7. Create Subscription (Phase 1.2.3)
+        // 8. Create Subscription (Phase 1.2.3)
         var planName = request.PlanId.ToLower() switch
         {
             "pro" => "Pro Tier",
@@ -129,13 +144,13 @@ public class OnboardingController : ControllerBase
 
         _context.Subscriptions.Add(subscription);
 
-        // 8. Update User Status
+        // 9. Update User Status
         user.OnboardingCompleted = true;
         
         await _context.SaveChangesAsync();
 
-        // 9. Generate New Token with RestaurantId (Phase 4.1)
-        var token = GenerateJwtToken(user, restaurant.Id);
+        // 10. Generate New Token with RestaurantId and BranchId
+        var token = GenerateJwtToken(user, restaurant.Id, branch.Id);
  
         return Ok(new { 
             Message = "Onboarding completado con éxito.", 
@@ -144,14 +159,16 @@ public class OnboardingController : ControllerBase
         });
     }
  
-    private string GenerateJwtToken(User user, Guid restaurantId)
+    private string GenerateJwtToken(User user, Guid restaurantId, Guid branchId)
     {
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.PlatformRole),
-            new Claim("RestaurantId", restaurantId.ToString())
+            new Claim("RestaurantId", restaurantId.ToString()),
+            new Claim("BranchId", branchId.ToString()),
+            new Claim("RestaurantRole", "Owner")
         };
  
         var jwtSettings = _config.GetSection("JwtSettings");

@@ -1,11 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RestSaaS.Infrastructure.Data;
 using RestSaaS.Core.Interfaces;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using RestSaaS.Infrastructure.Data;
+using System.Security.Claims;
 
 namespace RestSaaS.Api.Controllers;
 
@@ -26,37 +24,40 @@ public class DashboardController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
-        if (!tenantId.HasValue) return Unauthorized(new { Message = "No se pudo identificar el restaurante." });
+        var restaurantId = _tenantService.GetCurrentTenantId();
+        if (!restaurantId.HasValue) return BadRequest("No restaurant context.");
 
-        // Today's date range (UTC)
-        var today = DateTime.UtcNow.Date;
-
+        // Note: Global query filters in ApplicationDbContext automatically handle RestaurantId and BranchId
+        
         var menuCount = await _context.MenuItems.CountAsync();
-        var reservationsToday = await _context.Reservations.CountAsync(r => r.ReservationTime.Date == today);
-        var ordersToday = await _context.Orders.CountAsync(o => o.CreatedAt.Date == today);
+        var reservationsToday = await _context.Reservations
+            .CountAsync(r => r.ReservationTime.Date == DateTime.UtcNow.Date);
+        var ordersToday = await _context.Orders
+            .CountAsync(o => o.CreatedAt.Date == DateTime.UtcNow.Date);
 
         var subscription = await _context.Subscriptions
             .Include(s => s.Plan)
-            .OrderByDescending(s => s.StartDate)
-            .FirstOrDefaultAsync();
-
-        var restaurant = await _context.Restaurants
-            .FirstOrDefaultAsync(r => r.Id == tenantId.Value);
+            .Where(s => s.IsActive)
+            .Select(s => new {
+                PlanName = s.Plan.Name,
+                Status = s.Status,
+                EndDate = s.EndDate,
+                IsTrial = false // Mocked for now
+            })
+            .FirstOrDefaultAsync() ?? new {
+                PlanName = "Free",
+                Status = "Active",
+                EndDate = (DateTime?)null,
+                IsTrial = false
+            };
 
         return Ok(new
         {
-            MenuCount = menuCount,
-            ReservationsToday = reservationsToday,
-            OrdersToday = ordersToday,
-            IsActive = restaurant?.IsActive ?? false,
-            Subscription = new
-            {
-                PlanName = subscription?.Plan?.Name ?? "Sin Plan",
-                Status = subscription?.Status ?? "Inactivo",
-                EndDate = subscription?.EndDate,
-                IsTrial = subscription?.Status == "Trial"
-            }
+            menuCount,
+            reservationsToday,
+            ordersToday,
+            isActive = true, // We can add business logic here
+            subscription
         });
     }
 }

@@ -10,4 +10,7 @@ public abstract class TenantEntity : BaseEntity
 {
     public Guid RestaurantId { get; set; }
     public virtual Restaurant Restaurant { get; set; } = null!;
+    
+    public Guid? BranchId { get; set; }
+    public virtual Branch? Branch { get; set; }
 }

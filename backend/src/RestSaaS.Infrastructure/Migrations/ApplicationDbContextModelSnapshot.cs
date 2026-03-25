@@ -22,10 +22,219 @@ namespace RestSaaS.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RestSaaS.Core.Entities.BillingInfo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LegalName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TaxId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("RestaurantId")
+                        .IsUnique();
+
+                    b.ToTable("BillingInfos");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Branch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TableCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("Branches");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.BranchMenuOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("IsAvailableOverride")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MenuItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("PriceOverride")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("MenuItemId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("BranchMenuOverrides");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PdfUrl")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.InvoiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("InvoiceItems");
+                });
+
             modelBuilder.Entity("RestSaaS.Core.Entities.Menu", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -43,6 +252,8 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("Menus");
@@ -52,6 +263,9 @@ namespace RestSaaS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -72,6 +286,8 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("MenuId");
 
                     b.HasIndex("RestaurantId");
@@ -83,6 +299,12 @@ namespace RestSaaS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CategoryId")
@@ -106,13 +328,12 @@ namespace RestSaaS.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("numeric");
-
                     b.Property<Guid>("RestaurantId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("CategoryId");
 
@@ -125,6 +346,9 @@ namespace RestSaaS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<TimeSpan>("CloseTime")
@@ -144,6 +368,8 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("OpeningHours");
@@ -153,6 +379,9 @@ namespace RestSaaS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -177,6 +406,8 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("Orders");
@@ -186,6 +417,9 @@ namespace RestSaaS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -208,6 +442,8 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("MenuItemId");
 
                     b.HasIndex("OrderId");
@@ -217,11 +453,69 @@ namespace RestSaaS.Infrastructure.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("RestSaaS.Core.Entities.PaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ExpiryMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ExpiryYear")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Last4")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("PaymentMethods");
+                });
+
             modelBuilder.Entity("RestSaaS.Core.Entities.Plan", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowImages")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AllowOrders")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("AllowReservations")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -237,10 +531,13 @@ namespace RestSaaS.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("MaxBranches")
+                        .HasColumnType("integer");
+
                     b.Property<int>("MaxMenuItems")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MaxUsers")
+                    b.Property<int>("MaxStaffUsers")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -259,6 +556,9 @@ namespace RestSaaS.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -290,6 +590,8 @@ namespace RestSaaS.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("RestaurantId");
 
@@ -349,6 +651,9 @@ namespace RestSaaS.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ContactEmail")
                         .IsRequired()
                         .HasColumnType("text");
@@ -373,6 +678,8 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("RestaurantId")
                         .IsUnique();
 
@@ -385,6 +692,9 @@ namespace RestSaaS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -393,6 +703,9 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("NextBillingDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uuid");
@@ -409,11 +722,64 @@ namespace RestSaaS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("PlanId");
 
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("Subscriptions");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Transaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("RestSaaS.Core.Entities.User", b =>
@@ -485,10 +851,27 @@ namespace RestSaaS.Infrastructure.Migrations
                     b.ToTable("UserRestaurants");
                 });
 
-            modelBuilder.Entity("RestSaaS.Core.Entities.Menu", b =>
+            modelBuilder.Entity("RestSaaS.Core.Entities.BillingInfo", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
+                    b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
+                        .WithOne("BillingInfo")
+                        .HasForeignKey("RestSaaS.Core.Entities.BillingInfo", "RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Branch", b =>
                 {
                     b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
-                        .WithMany()
+                        .WithMany("Branches")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -496,8 +879,92 @@ namespace RestSaaS.Infrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
+            modelBuilder.Entity("RestSaaS.Core.Entities.BranchMenuOverride", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RestSaaS.Core.Entities.MenuItem", "MenuItem")
+                        .WithMany()
+                        .HasForeignKey("MenuItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("MenuItem");
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Invoice", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
+                    b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
+                        .WithMany("Invoices")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RestSaaS.Core.Entities.Subscription", "Subscription")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Restaurant");
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.InvoiceItem", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Invoice", "Invoice")
+                        .WithMany("Items")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Menu", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
+                    b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Restaurant");
+                });
+
             modelBuilder.Entity("RestSaaS.Core.Entities.MenuCategory", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.Menu", "Menu")
                         .WithMany("Categories")
                         .HasForeignKey("MenuId")
@@ -510,6 +977,8 @@ namespace RestSaaS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Menu");
 
                     b.Navigation("Restaurant");
@@ -517,6 +986,10 @@ namespace RestSaaS.Infrastructure.Migrations
 
             modelBuilder.Entity("RestSaaS.Core.Entities.MenuItem", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.MenuCategory", "Category")
                         .WithMany("Items")
                         .HasForeignKey("CategoryId")
@@ -529,6 +1002,8 @@ namespace RestSaaS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Category");
 
                     b.Navigation("Restaurant");
@@ -536,28 +1011,44 @@ namespace RestSaaS.Infrastructure.Migrations
 
             modelBuilder.Entity("RestSaaS.Core.Entities.OpeningHours", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany("OpeningHours")
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
                         .WithMany("OpeningHours")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Restaurant");
                 });
 
             modelBuilder.Entity("RestSaaS.Core.Entities.Order", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Restaurant");
                 });
 
             modelBuilder.Entity("RestSaaS.Core.Entities.OrderItem", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.MenuItem", "MenuItem")
                         .WithMany()
                         .HasForeignKey("MenuItemId")
@@ -576,6 +1067,8 @@ namespace RestSaaS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("MenuItem");
 
                     b.Navigation("Order");
@@ -583,30 +1076,63 @@ namespace RestSaaS.Infrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
+            modelBuilder.Entity("RestSaaS.Core.Entities.PaymentMethod", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
+                    b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
+                        .WithMany("PaymentMethods")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Restaurant");
+                });
+
             modelBuilder.Entity("RestSaaS.Core.Entities.Reservation", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Restaurant");
                 });
 
             modelBuilder.Entity("RestSaaS.Core.Entities.Settings", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
                         .WithOne("Settings")
                         .HasForeignKey("RestSaaS.Core.Entities.Settings", "RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Restaurant");
                 });
 
             modelBuilder.Entity("RestSaaS.Core.Entities.Subscription", b =>
                 {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
                     b.HasOne("RestSaaS.Core.Entities.Plan", "Plan")
                         .WithMany()
                         .HasForeignKey("PlanId")
@@ -614,12 +1140,37 @@ namespace RestSaaS.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
-                        .WithMany()
+                        .WithMany("Subscriptions")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Plan");
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Transaction", b =>
+                {
+                    b.HasOne("RestSaaS.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId");
+
+                    b.HasOne("RestSaaS.Core.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId");
+
+                    b.HasOne("RestSaaS.Core.Entities.Restaurant", "Restaurant")
+                        .WithMany("Transactions")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Invoice");
 
                     b.Navigation("Restaurant");
                 });
@@ -643,6 +1194,16 @@ namespace RestSaaS.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("RestSaaS.Core.Entities.Branch", b =>
+                {
+                    b.Navigation("OpeningHours");
+                });
+
+            modelBuilder.Entity("RestSaaS.Core.Entities.Invoice", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("RestSaaS.Core.Entities.Menu", b =>
                 {
                     b.Navigation("Categories");
@@ -660,9 +1221,21 @@ namespace RestSaaS.Infrastructure.Migrations
 
             modelBuilder.Entity("RestSaaS.Core.Entities.Restaurant", b =>
                 {
+                    b.Navigation("BillingInfo");
+
+                    b.Navigation("Branches");
+
+                    b.Navigation("Invoices");
+
                     b.Navigation("OpeningHours");
 
+                    b.Navigation("PaymentMethods");
+
                     b.Navigation("Settings");
+
+                    b.Navigation("Subscriptions");
+
+                    b.Navigation("Transactions");
 
                     b.Navigation("UserRestaurants");
                 });

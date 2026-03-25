@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useTenant } from '@/context/TenantContext';
-import { ChevronDown, Store, Plus, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, Store, Plus, Check, Settings } from 'lucide-react';
 
 export default function RestaurantSwitcher() {
   const { activeRestaurant, restaurants, setActiveRestaurant } = useTenant();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   if (!activeRestaurant) return null;
 
@@ -35,21 +37,21 @@ export default function RestaurantSwitcher() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          <div className="absolute top-full left-4 right-4 mt-2 bg-surface border border-border rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute top-full left-4 right-4 mt-2 bg-white dark:bg-slate-900 border border-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5">
             <div className="p-2 space-y-1">
               <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-foreground/30">Tus Restaurantes</p>
               {restaurants.map((restaurant) => (
-                <button
-                  key={restaurant.id}
+                <div
+                  key={restaurant.restaurantId}
+                  className={`group w-full flex items-center justify-between p-3 rounded-xl transition-colors cursor-pointer ${
+                    activeRestaurant.restaurantId === restaurant.restaurantId 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'hover:bg-foreground/5 text-foreground/60'
+                  }`}
                   onClick={() => {
                     setActiveRestaurant(restaurant);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors ${
-                    activeRestaurant.id === restaurant.id 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'hover:bg-foreground/5 text-foreground/60'
-                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center">
@@ -57,20 +59,42 @@ export default function RestaurantSwitcher() {
                     </div>
                     <span className="text-sm font-bold">{restaurant.name}</span>
                   </div>
-                  {activeRestaurant.id === restaurant.id && <Check size={14} />}
-                </button>
+                  <div className="flex flex-col items-end gap-1">
+                    {activeRestaurant.restaurantId === restaurant.restaurantId && <Check size={14} />}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/admin/branches/new?restaurantId=${restaurant.restaurantId}`);
+                      }}
+                      className="text-[9px] font-black uppercase tracking-tighter text-primary/60 hover:text-primary transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Plus size={10} />
+                      Sucursal
+                    </button>
+                  </div>
+                </div>
               ))}
               
               <hr className="my-2 border-border" />
               
               <button
-                onClick={() => window.location.href = "/admin/restaurants/new"}
+                onClick={() => router.push("/admin/restaurants/new")}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 text-primary transition-colors mb-1"
               >
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Plus size={14} />
                 </div>
                 <span className="text-sm font-bold">Nuevo Restaurante</span>
+              </button>
+
+              <button
+                onClick={() => router.push("/admin/restaurants")}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-foreground/5 text-foreground/40 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center">
+                  <Settings size={14} />
+                </div>
+                <span className="text-sm font-bold">Gestionar Restaurantes</span>
               </button>
             </div>
           </div>

@@ -41,7 +41,7 @@ public class OrdersController : ControllerBase
             {
                 MenuItemId = menuItem.Id,
                 Quantity = itemDto.Quantity,
-                UnitPrice = menuItem.Price
+                UnitPrice = menuItem.BasePrice
             };
 
             order.OrderItems.Add(orderItem);

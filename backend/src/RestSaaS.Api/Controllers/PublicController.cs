@@ -18,7 +18,7 @@ public class PublicController : ControllerBase
     }
 
     [HttpGet("{slug}")]
-    public async Task<IActionResult> GetRestaurantBySlug(string slug)
+    public async Task<IActionResult> GetRestaurantBySlug(string slug, [FromQuery] Guid? branchId = null)
     {
         var restaurant = await _context.Restaurants
             .FirstOrDefaultAsync(r => r.Slug == slug.ToLower());
@@ -42,6 +42,11 @@ public class PublicController : ControllerBase
                 .LoadAsync();
         }
 
+        // Fetch Overrides if branch is selected
+        var overrides = branchId.HasValue 
+            ? await _context.BranchMenuOverrides.Where(o => o.BranchId == branchId.Value).ToListAsync()
+            : new System.Collections.Generic.List<RestSaaS.Core.Entities.BranchMenuOverride>();
+
         return Ok(new {
             Restaurant = new {
                 restaurant.Id,
@@ -59,13 +64,19 @@ public class PublicController : ControllerBase
                 Categories = menu.Categories.OrderBy(c => c.DisplayOrder).Select(c => new {
                     c.Id,
                     c.Name,
-                    Items = c.Items.Where(i => i.IsAvailable).Select(i => new {
-                        i.Id,
-                        i.Name,
-                        i.Description,
-                        i.Price,
-                        i.ImageUrl
-                    }).ToList()
+                    Items = c.Items.Select(i => {
+                        var ovr = overrides.FirstOrDefault(o => o.MenuItemId == i.Id);
+                        return new {
+                            i.Id,
+                            i.Name,
+                            i.Description,
+                            Price = ovr?.PriceOverride ?? i.BasePrice,
+                            i.ImageUrl,
+                            IsAvailable = ovr?.IsAvailableOverride ?? i.IsAvailable
+                        };
+                    })
+                    .Where(i => i.IsAvailable)
+                    .ToList()
                 }).ToList()
             }
         });

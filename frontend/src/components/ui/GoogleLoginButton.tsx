@@ -32,7 +32,7 @@ export function GoogleLoginButton({ mode = "signin" }: GoogleLoginButtonProps) {
           if (data.onboardingCompleted === false) {
             router.push("/onboarding");
           } else {
-            router.push("/admin/dashboard");
+            router.push("/select-restaurant");
           }
         } else {
           const errorText = await res.text();
@@ -58,7 +58,6 @@ export function GoogleLoginButton({ mode = "signin" }: GoogleLoginButtonProps) {
         type="button"
         variant="outline" 
         onClick={() => {
-          setLoading(true);
           login();
         }} 
         disabled={loading}

@@ -20,6 +20,11 @@ interface RestaurantData {
     openTime: string;
     closeTime: string;
   }>;
+  branches: Array<{
+    id: string;
+    name: string;
+    address: string;
+  }>;
 }
 
 async function getRestaurantData(slug: string): Promise<RestaurantData | null> {
@@ -41,6 +46,7 @@ interface ReservationFormData {
   date: string;
   time: string;
   specialRequests: string;
+  branchId: string;
 }
 
 export default function RestaurantReservationsPage({
@@ -53,6 +59,7 @@ export default function RestaurantReservationsPage({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
 
   // Load data on mount
   useEffect(() => {
@@ -79,6 +86,7 @@ export default function RestaurantReservationsPage({
       date: formData.get('date') as string,
       time: formData.get('time') as string,
       specialRequests: formData.get('specialRequests') as string,
+      branchId: selectedBranchId,
     };
 
     // Combine date and time
@@ -97,6 +105,7 @@ export default function RestaurantReservationsPage({
           customerEmail: data.customerEmail,
           partySize: data.partySize,
           reservationTime: reservationTime.toISOString(),
+          branchId: data.branchId,
         }),
       });
 
@@ -161,6 +170,25 @@ export default function RestaurantReservationsPage({
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Selecciona la sucursal *
+              </label>
+              <select
+                name="branchId"
+                required
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="">Selecciona una sucursal</option>
+                {restaurant.branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} - {b.address}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">

@@ -38,7 +38,32 @@ public class MenusController : ControllerBase
 
         if (menu == null) return NotFound();
 
-        return Ok(menu);
+        // Project to DTO to avoid circular navigation property cycles
+        var dto = new
+        {
+            id = menu.Id,
+            name = menu.Name,
+            isActive = menu.IsActive,
+            categories = menu.Categories
+                .OrderBy(c => c.DisplayOrder)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name,
+                    displayOrder = c.DisplayOrder,
+                    items = c.Items.Select(i => new
+                    {
+                        id = i.Id,
+                        name = i.Name,
+                        description = i.Description,
+                        basePrice = i.BasePrice,
+                        imageUrl = i.ImageUrl,
+                        isAvailable = i.IsAvailable
+                    }).ToList()
+                }).ToList()
+        };
+
+        return Ok(dto);
     }
 
     [HttpPost]
@@ -47,7 +72,7 @@ public class MenusController : ControllerBase
         var menu = new Menu { Name = dto.Name };
         _context.Menus.Add(menu);
         await _context.SaveChangesAsync();
-        return Ok(menu);
+        return Ok(new MenuDto { Id = menu.Id, Name = menu.Name, IsActive = menu.IsActive });
     }
 
     [HttpPost("categories")]
@@ -61,7 +86,7 @@ public class MenusController : ControllerBase
         };
         _context.MenuCategories.Add(category);
         await _context.SaveChangesAsync();
-        return Ok(category);
+        return Ok(new CategoryDto { Id = category.Id, Name = category.Name, DisplayOrder = category.DisplayOrder });
     }
 
     [HttpPost("items")]
@@ -72,13 +97,13 @@ public class MenusController : ControllerBase
             CategoryId = dto.CategoryId,
             Name = dto.Name,
             Description = dto.Description,
-            Price = dto.Price,
+            BasePrice = dto.BasePrice,
             ImageUrl = dto.ImageUrl,
             IsAvailable = true
         };
         _context.MenuItems.Add(item);
         await _context.SaveChangesAsync();
-        return Ok(item);
+        return Ok(new MenuItemDto { Id = item.Id, Name = item.Name, Description = item.Description, BasePrice = item.BasePrice, ImageUrl = item.ImageUrl, IsAvailable = item.IsAvailable });
     }
 
     [HttpPut("{menuId}/items/{itemId}")]
@@ -92,11 +117,11 @@ public class MenusController : ControllerBase
 
         item.Name = dto.Name;
         item.Description = dto.Description;
-        item.Price = dto.Price;
+        item.BasePrice = dto.BasePrice;
         item.ImageUrl = dto.ImageUrl;
 
         await _context.SaveChangesAsync();
-        return Ok(item);
+        return Ok(new MenuItemDto { Id = item.Id, Name = item.Name, Description = item.Description, BasePrice = item.BasePrice, ImageUrl = item.ImageUrl, IsAvailable = item.IsAvailable });
     }
 
     [HttpDelete("items/{id}")]

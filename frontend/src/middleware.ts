@@ -27,8 +27,6 @@ export function middleware(req: NextRequest) {
   }
 
   // 2. Extract subdomain/tenant slug
-  // hostname = "pizzaluna.localhost:3000"
-  // rootDomain = "localhost:3000"
   const currentHost = hostname.replace(`.${rootDomain}`, '');
 
   // 3. If there was no subdomain (currentHost === hostname), it's not a tenant URL
@@ -44,11 +42,11 @@ export function middleware(req: NextRequest) {
 
   // 5. Exclude admin and platform routes from being rewritten (keep them global)
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/platform')) {
+    // Basic auth check for admin routes could be done aquí if we use cookies.
     return NextResponse.next();
   }
 
   // 6. Rewrite request to the [tenantSlug] dynamic route
-  // e.g., /menu -> /pizzaluna/menu
   const tenantPath = `/${currentHost}${url.pathname}`;
   return NextResponse.rewrite(new URL(tenantPath, req.url));
 }

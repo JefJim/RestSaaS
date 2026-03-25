@@ -25,6 +25,8 @@ builder.Services.AddCors(options =>
 
 // Clean Architecture: Register Infrastructure & Core Dependencies
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IBillingService, BillingService>();
 
 // Supabase Client
 builder.Services.AddScoped(provider =>
